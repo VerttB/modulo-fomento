@@ -1,0 +1,39 @@
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+
+from src.core.database import get_db
+from src.schemas import PesquisadorCreate, PesquisadorRead, PesquisadorUpdate
+from src.services.pesquisador import (
+    listar_pesquisador,
+    obter_pesquisador,
+    criar_pesquisador,
+    atualizar_pesquisador,
+    excluir_pesquisador,
+)
+
+router = APIRouter(prefix="/pesquisadores", tags=["Pesquisadores"])
+
+
+@router.get("/", response_model=list[PesquisadorRead])
+def listar(db: Session = Depends(get_db)):
+    return listar_pesquisador(db)
+
+
+@router.get("/{resource_id}", response_model=PesquisadorRead)
+def obter(resource_id: int, db: Session = Depends(get_db)):
+    return obter_pesquisador(db, resource_id)
+
+
+@router.post("/", response_model=PesquisadorRead, status_code=status.HTTP_201_CREATED)
+def criar(payload: PesquisadorCreate, db: Session = Depends(get_db)):
+    return criar_pesquisador(db, payload)
+
+
+@router.patch("/{resource_id}", response_model=PesquisadorRead)
+def atualizar(resource_id: int, payload: PesquisadorUpdate, db: Session = Depends(get_db)):
+    return atualizar_pesquisador(db, resource_id, payload)
+
+
+@router.delete("/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
+def excluir(resource_id: int, db: Session = Depends(get_db)):
+    excluir_pesquisador(db, resource_id)

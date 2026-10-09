@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from src.core.database import get_db
-from src.schemas import UnidadeCreate, UnidadeRead, UnidadeUpdate
+from src.schemas import UnidadeCreate, UnidadeRead, UnidadeUpdate, PaginatedResponse
 from src.services.unidade import (
     listar_unidade,
     obter_unidade,
@@ -14,9 +14,17 @@ from src.services.unidade import (
 router = APIRouter(prefix="/unidades", tags=["Unidades"])
 
 
-@router.get("/", response_model=list[UnidadeRead])
-def listar(db: Session = Depends(get_db)):
-    return listar_unidade(db)
+@router.get("/", response_model=PaginatedResponse[UnidadeRead])
+def listar(
+    page: int = Query(1, ge=1, description="Número da página"),
+    size: int = Query(30, ge=1, le=100, description="Tamanho da página"),
+    db: Session = Depends(get_db),
+):
+    items, total = listar_unidade(db, page=page, size=size)
+    pages = (total + size - 1) // size
+    return PaginatedResponse(
+        items=items, total=total, page=page, size=size, pages=pages
+    )
 
 
 @router.get("/{resource_id}", response_model=UnidadeRead)

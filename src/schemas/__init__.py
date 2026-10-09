@@ -1,15 +1,28 @@
 from datetime import date, datetime
+from typing import Any, Generic, TypeVar
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from src.core.enums import AreaConhecimentoTipo
+from src.core.enums import AreaConhecimentoTipo, ModalidadeBolsa, PesquisadorStatus
+
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    size: int
+    pages: int
 
 
 class ProjetoCreate(BaseModel):
-    nome: str
-    resumo: str
-    grande_area: str
-    subarea: str
+    nome: str | None = None
+    resumo: str | None = None
+    grande_area: str | None = None
+    subarea: str | None = None
 
 
 class ProjetoUpdate(BaseModel):
@@ -20,29 +33,35 @@ class ProjetoUpdate(BaseModel):
 
 
 class ProjetoRead(ProjetoCreate):
-    id: int
+    id: UUID
     model_config = ConfigDict(from_attributes=True)
 
 
 class PesquisadorCreate(BaseModel):
-    lattes: str
-    nome: str
+    cpf: str | None = None
+    lattes: str | None = None
+    nome: str | None = None
+    cidade: str | None = None
+    status: PesquisadorStatus = PesquisadorStatus.PENDENTE
 
 
 class PesquisadorUpdate(BaseModel):
+    cpf: str | None = None
     lattes: str | None = None
     nome: str | None = None
+    cidade: str | None = None
+    status: PesquisadorStatus | None = None
 
 
 class PesquisadorRead(PesquisadorCreate):
-    id: int
+    id: UUID
     model_config = ConfigDict(from_attributes=True)
 
 
 class InstituicaoCreate(BaseModel):
-    nome: str
-    cep: str
-    sigla: str
+    nome: str | None = None
+    cep: str | None = None
+    sigla: str | None = None
 
 
 class InstituicaoUpdate(BaseModel):
@@ -52,70 +71,72 @@ class InstituicaoUpdate(BaseModel):
 
 
 class InstituicaoRead(InstituicaoCreate):
-    id: int
+    id: UUID
     model_config = ConfigDict(from_attributes=True)
 
 
 class DepartamentoCreate(BaseModel):
-    nome: str
-    unidade: str
-    cep: str
-    instituicao_id: int
+    nome: str | None = None
+    unidade: str | None = None
+    cep: str | None = None
+    instituicao_id: UUID
+    grande_area_id: UUID | None = None
 
 
 class DepartamentoUpdate(BaseModel):
     nome: str | None = None
     unidade: str | None = None
     cep: str | None = None
-    instituicao_id: int | None = None
+    instituicao_id: UUID | None = None
+    grande_area_id: UUID | None = None
 
 
 class DepartamentoRead(DepartamentoCreate):
-    id: int
+    id: UUID
     model_config = ConfigDict(from_attributes=True)
 
 
 class UnidadeCreate(BaseModel):
-    nome: str
-    cep: str
-    departamento_id: int
+    nome: str | None = None
+    cep: str | None = None
+    departamento_ids: list[UUID] = []
 
 
 class UnidadeUpdate(BaseModel):
     nome: str | None = None
     cep: str | None = None
-    departamento_id: int | None = None
+    departamento_ids: list[UUID] | None = None
 
 
 class UnidadeRead(UnidadeCreate):
-    id: int
+    id: UUID
     model_config = ConfigDict(from_attributes=True)
 
 
 class BolsaCreate(BaseModel):
-    quando_iniciou: date
+    quando_iniciou: date | None = None
     quando_terminou: date | None = None
     data_saida_pesquisador: date | None = None
-    modalidade: str
-    nome_curso: str
-    projeto_id: int
-    instituicao_id: int
-    pesquisador_id: int
+    modalidade: ModalidadeBolsa | None = None
+    nome_curso: str | None = None
+    projeto_id: UUID
+    instituicao_id: UUID
+    pesquisador_id: UUID
 
 
 class BolsaUpdate(BaseModel):
     quando_iniciou: date | None = None
     quando_terminou: date | None = None
     data_saida_pesquisador: date | None = None
-    modalidade: str | None = None
+    modalidade: ModalidadeBolsa | None = None
     nome_curso: str | None = None
-    projeto_id: int | None = None
-    instituicao_id: int | None = None
-    pesquisador_id: int | None = None
+    projeto_id: UUID | None = None
+    instituicao_id: UUID | None = None
+    pesquisador_id: UUID | None = None
 
 
 class BolsaRead(BolsaCreate):
-    id: int
+    id: UUID
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -130,17 +151,17 @@ class PalavraChaveUpdate(BaseModel):
 
 
 class PalavraChaveRead(PalavraChaveCreate):
-    id: int
+    id: UUID
     criado_em: datetime
     model_config = ConfigDict(from_attributes=True)
 
 
 class ProjetoPalavrasChaveUpdate(BaseModel):
-    palavras_chave_ids: list[int]
+    palavras_chave_ids: list[UUID]
 
 
 class ProjetoPalavrasChaveRead(BaseModel):
-    projeto_id: int
+    projeto_id: UUID
     palavras_chave: list[PalavraChaveRead]
     model_config = ConfigDict(from_attributes=True)
 
@@ -149,16 +170,26 @@ class AreaConhecimentoCreate(BaseModel):
     termo: str
     termo_normalizado: str
     tipo: AreaConhecimentoTipo
-    pai_id: int | None = None
+    pai_id: UUID | None = None
 
 
 class AreaConhecimentoUpdate(BaseModel):
     termo: str | None = None
     termo_normalizado: str | None = None
     tipo: AreaConhecimentoTipo | None = None
-    pai_id: int | None = None
+    pai_id: UUID | None = None
 
 
 class AreaConhecimentoRead(AreaConhecimentoCreate):
-    id: int
+    id: UUID
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EstatisticasBolsas(BaseModel):
+    total: int
+    por_modalidade: dict[str, int]
+    por_instituicao: list[dict[str, Any]]
+    por_cidade: list[dict[str, Any]]
+    por_grande_area: list[dict[str, Any]]
+    por_area: list[dict[str, Any]]
     model_config = ConfigDict(from_attributes=True)

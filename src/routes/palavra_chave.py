@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from src.core.database import get_db
@@ -8,6 +8,7 @@ from src.schemas import (
     PalavraChaveUpdate,
     ProjetoPalavrasChaveRead,
     ProjetoPalavrasChaveUpdate,
+    PaginatedResponse,
 )
 from src.services.palavra_chave import (
     listar_palavras_chave,
@@ -22,9 +23,17 @@ from src.services.palavra_chave import (
 router = APIRouter(prefix="/palavras-chave", tags=["Palavras-chave"])
 
 
-@router.get("/", response_model=list[PalavraChaveRead])
-def listar(db: Session = Depends(get_db)):
-    return listar_palavras_chave(db)
+@router.get("/", response_model=PaginatedResponse[PalavraChaveRead])
+def listar(
+    page: int = Query(1, ge=1, description="Número da página"),
+    size: int = Query(30, ge=1, le=100, description="Tamanho da página"),
+    db: Session = Depends(get_db),
+):
+    items, total = listar_palavras_chave(db, page=page, size=size)
+    pages = (total + size - 1) // size
+    return PaginatedResponse(
+        items=items, total=total, page=page, size=size, pages=pages
+    )
 
 
 @router.get("/{resource_id}", response_model=PalavraChaveRead)

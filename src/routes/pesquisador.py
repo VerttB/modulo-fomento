@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from src.core.database import get_db
-from src.schemas import PesquisadorCreate, PesquisadorRead, PesquisadorUpdate
+from src.schemas import PaginatedResponse, PesquisadorCreate, PesquisadorRead, PesquisadorUpdate
 from src.services.pesquisador import (
     listar_pesquisador,
     obter_pesquisador,
@@ -14,9 +14,17 @@ from src.services.pesquisador import (
 router = APIRouter(prefix="/pesquisadores", tags=["Pesquisadores"])
 
 
-@router.get("/", response_model=list[PesquisadorRead])
-def listar(db: Session = Depends(get_db)):
-    return listar_pesquisador(db)
+@router.get("/", response_model=PaginatedResponse[PesquisadorRead])
+def listar(
+    page: int = Query(1, ge=1, description="Número da página"),
+    size: int = Query(30, ge=1, le=100, description="Tamanho da página"),
+    db: Session = Depends(get_db),
+):
+    items, total = listar_pesquisador(db, page=page, size=size)
+    pages = (total + size - 1) // size
+    return PaginatedResponse(
+        items=items, total=total, page=page, size=size, pages=pages
+    )
 
 
 @router.get("/{resource_id}", response_model=PesquisadorRead)

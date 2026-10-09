@@ -10,6 +10,8 @@ COPY pyproject.toml README.md ./
 RUN uv sync --no-dev --no-install-project
 
 COPY src ./src
+COPY alembic.ini ./
+COPY migrations ./migrations
 RUN uv sync --no-dev
 
 EXPOSE 8000

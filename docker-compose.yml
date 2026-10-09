@@ -17,10 +17,15 @@ services:
 
   api:
     build: .
+    command: ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/src"]
     environment:
       DATABASE_URL: postgresql+psycopg://fomento:fomento@db:5432/fomento
     ports:
       - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./migrations:/app/migrations
+      - ./alembic.ini:/app/alembic.ini:ro
     depends_on:
       db:
         condition: service_healthy

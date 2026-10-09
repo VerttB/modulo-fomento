@@ -10,3 +10,11 @@ class ResourceNotFoundError(ApplicationError):
 
 class DomainValidationError(ApplicationError):
     status_code = 422
+
+
+class IngestFormatError(ApplicationError):
+    status_code = 422
+
+
+class ExternalLookupError(ApplicationError):
+    status_code = 502

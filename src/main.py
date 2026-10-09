@@ -22,6 +22,7 @@ async def application_error_handler(request: Request, error: ApplicationError):
 
 
 @app.get("/", tags=["Saúde"])
+@app.get("/health", tags=["Saúde"])
 def health_check() -> dict[str, str]:
     """Confirma que a API está disponível sem consultar o banco."""
     return {"status": "ok"}

@@ -117,7 +117,7 @@ def upgrade() -> None:
     op.execute(
         "ALTER TABLE bolsas ADD CONSTRAINT ex_bolsas_pesquisador_periodo "
         "EXCLUDE USING gist (pesquisador_id WITH =, "
-        "daterange(quando_iniciou, data_saida_pesquisador, '[)') WITH &&)"
+        "daterange(quando_iniciou, quando_terminou, '[)') WITH &&)"
     )
 
     op.create_table(
@@ -127,8 +127,27 @@ def upgrade() -> None:
         sa.Column("unidade", sa.String(length=255), nullable=False),
         sa.Column("cep", sa.String(length=9), nullable=False),
         sa.Column("instituicao_id", sa.Integer(), nullable=False),
+        sa.Column("grande_area_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["instituicao_id"], ["instituicoes.id"]),
+        sa.ForeignKeyConstraint(
+            ["grande_area_id"],
+            ["areas_conhecimento.id"],
+            name="fk_departamentos_grande_area",
+        ),
         sa.PrimaryKeyConstraint("id"),
+    )
+
+    op.create_table(
+        "departamentos_unidades",
+        sa.Column("departamento_id", sa.Integer(), nullable=False),
+        sa.Column("unidade_id", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(
+            ["departamento_id"], ["departamentos.id"], ondelete="CASCADE"
+        ),
+        sa.ForeignKeyConstraint(
+            ["unidade_id"], ["unidades.id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("departamento_id", "unidade_id"),
     )
 
     op.create_table(
@@ -143,6 +162,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_table("projetos_palavras_chave")
+    op.drop_table("departamentos_unidades")
     op.drop_table("departamentos")
     op.execute("ALTER TABLE bolsas DROP CONSTRAINT ex_bolsas_pesquisador_periodo")
     op.drop_table("bolsas")

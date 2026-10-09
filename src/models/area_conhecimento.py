@@ -1,5 +1,7 @@
 from sqlalchemy import CheckConstraint, Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import UUID
+import uuid
 
 from src.core.enums import AreaConhecimentoTipo
 from src.models.base import Base
@@ -19,13 +21,18 @@ class AreaConhecimento(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
     termo: Mapped[str] = mapped_column(String(255), nullable=False)
     termo_normalizado: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     tipo: Mapped[AreaConhecimentoTipo] = mapped_column(
-        Enum(AreaConhecimentoTipo, native_enum=False, create_constraint=False), nullable=False
+        Enum(
+            AreaConhecimentoTipo,
+            native_enum=False,
+            create_constraint=False,
+            values_callable=lambda enum_type: [member.value for member in enum_type],
+        ),
+        nullable=False,
     )
-    pai_id: Mapped[int | None] = mapped_column(
+    pai_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("areas_conhecimento.id", ondelete="RESTRICT"), nullable=True
     )
 
@@ -33,3 +40,4 @@ class AreaConhecimento(Base):
         remote_side="AreaConhecimento.id", back_populates="filhas"
     )
     filhas: Mapped[list["AreaConhecimento"]] = relationship(back_populates="pai")
+    departamentos: Mapped[list["Departamento"]] = relationship(back_populates="grande_area")

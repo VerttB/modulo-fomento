@@ -8,11 +8,10 @@ from src.models.base import Base
 class Projeto(Base):
     __tablename__ = "projetos"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    nome: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    resumo: Mapped[str] = mapped_column(Text, nullable=False)
-    grande_area: Mapped[str] = mapped_column(String(255), nullable=False)
-    subarea: Mapped[str] = mapped_column(String(255), nullable=False)
+    nome: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    resumo: Mapped[str | None] = mapped_column(Text, nullable=True)
+    grande_area: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    subarea: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     palavras_chave: Mapped[list["PalavraChave"]] = relationship(
         secondary=projeto_palavra_chave, back_populates="projetos"

@@ -10,7 +10,6 @@ from src.models.base import Base
 class PalavraChave(Base):
     __tablename__ = "palavras_chave"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
     termo: Mapped[str] = mapped_column(String(255), nullable=False)
     termo_normalizado: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     criado_em: Mapped[datetime] = mapped_column(

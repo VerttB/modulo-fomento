@@ -1,15 +1,26 @@
 from typing import Any
+from math import ceil
 
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from src.core.exceptions import DomainValidationError, ResourceNotFoundError
 from src.models import AreaConhecimento
 
 
-def listar_areas_conhecimento(db: Session) -> list[AreaConhecimento]:
-    return list(db.scalars(select(AreaConhecimento)))
+DEFAULT_PAGE_SIZE = 30
+
+
+def _paginar(db: Session, query, page: int, size: int):
+    total = db.scalar(select(func.count()).select_from(query.subquery()))
+    items = list(db.scalars(query.limit(size).offset((page - 1) * size)))
+    return items, total
+
+
+def listar_areas_conhecimento(db: Session, page: int = 1, size: int = DEFAULT_PAGE_SIZE) -> tuple[list[AreaConhecimento], int]:
+    query = select(AreaConhecimento).order_by(AreaConhecimento.id)
+    return _paginar(db, query, page, size)
 
 
 def obter_area_conhecimento(db: Session, resource_id: int) -> AreaConhecimento:

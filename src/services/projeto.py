@@ -1,15 +1,26 @@
 from typing import Any
+from math import ceil
 
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from src.core.exceptions import ResourceNotFoundError
 from src.models import Projeto
 
 
-def listar_projeto(db: Session) -> list[Projeto]:
-    return list(db.scalars(select(Projeto)))
+DEFAULT_PAGE_SIZE = 30
+
+
+def _paginar(db: Session, query, page: int, size: int):
+    total = db.scalar(select(func.count()).select_from(query.subquery()))
+    items = list(db.scalars(query.limit(size).offset((page - 1) * size)))
+    return items, total
+
+
+def listar_projeto(db: Session, page: int = 1, size: int = DEFAULT_PAGE_SIZE) -> tuple[list[Projeto], int]:
+    query = select(Projeto).order_by(Projeto.id)
+    return _paginar(db, query, page, size)
 
 
 def obter_projeto(db: Session, resource_id: int) -> Projeto:

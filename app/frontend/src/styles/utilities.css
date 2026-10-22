@@ -1,0 +1,5 @@
+.app-shell {
+  background-color: var(--color-app);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

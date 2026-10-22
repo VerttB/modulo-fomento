@@ -151,6 +151,11 @@ activemq-data/
 .env
 .envrc
 .venv
+.venv/
+app/backend/storage/
+node_modules/
+app/frontend/dist/
+app/frontend/node_modules/
 env/
 venv/
 ENV/

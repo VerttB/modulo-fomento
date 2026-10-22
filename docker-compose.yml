@@ -2,33 +2,60 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: fomento
-      POSTGRES_USER: fomento
-      POSTGRES_PASSWORD: fomento
+      POSTGRES_DB: ${POSTGRES_DB:?Configure POSTGRES_DB no arquivo .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Configure POSTGRES_USER no arquivo .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configure POSTGRES_PASSWORD no arquivo .env}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fomento -d fomento"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   api:
-    build: .
+    build: ./app/backend
     command: ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/src"]
     environment:
-      DATABASE_URL: postgresql+psycopg://fomento:fomento@db:5432/fomento
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      TERRITORIOS_CSV_PATH: ${TERRITORIOS_CSV_PATH:-/app/data/referencias/dim_territorio_identidade.csv}
+      POPULACAO_MUNICIPIOS_CSV_PATH: ${POPULACAO_MUNICIPIOS_CSV_PATH:-/app/data/referencias/IBGE_Cidades_Bahia.csv}
+      INGESTOES_PATH: ${INGESTOES_PATH:-/app/storage/ingestoes}
+      SIMCC_IDENTIFICADOR_URL: ${SIMCC_IDENTIFICADOR_URL:-https://simcc.uesc.br/v3/api/getIdentificadorCNPq}
+      SIMCC_RESEARCHERS_URL: ${SIMCC_RESEARCHERS_URL:-https://observatoriocti.secti.ba.gov.br/simcc/api/researchers}
+      VIA_CEP_URL: ${VIA_CEP_URL:-https://viacep.com.br/ws/{cep}/json/}
+      EXTERNAL_API_TIMEOUT_SECONDS: ${EXTERNAL_API_TIMEOUT_SECONDS:-20}
+      INGEST_BATCH_SIZE: ${INGEST_BATCH_SIZE:-100}
+      INGEST_CHECKPOINT_INTERVAL: ${INGEST_CHECKPOINT_INTERVAL:-10}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     ports:
-      - "8000:8000"
+      - "${API_PORT:-10010}:8000"
     volumes:
-      - ./src:/app/src
-      - ./migrations:/app/migrations
-      - ./alembic.ini:/app/alembic.ini:ro
+      - ./app/backend/src:/app/src
+      - ./app/backend/data:/app/data:ro
+      - ./app/backend/migrations:/app/migrations
+      - ./app/backend/alembic.ini:/app/alembic.ini:ro
+      - ingest_data:/app/storage/ingestoes
     depends_on:
       db:
         condition: service_healthy
 
+  web:
+    build: ./app/frontend
+    command: ["sh", "-c", "npm ci && npm run dev -- --host 0.0.0.0"]
+    environment:
+      VITE_API_TARGET: http://api:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./app/frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - api
+
 volumes:
   postgres_data:
+  frontend_node_modules:
+  ingest_data:

@@ -1,6 +1,12 @@
 import type { ApiErrorBody } from "../core/types/common";
 
-export const API_BASE = "/api/v1";
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL;
+
+if (!configuredApiBase) {
+  throw new Error("Configure VITE_API_BASE_URL com a URL absoluta da API.");
+}
+
+export const API_BASE = new URL(configuredApiBase).toString().replace(/\/$/, "");
 
 export class ApiError extends Error {
   constructor(message: string, public readonly status: number) {

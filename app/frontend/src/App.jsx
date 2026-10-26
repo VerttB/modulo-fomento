@@ -15,7 +15,6 @@ import PanoramaPage from "./pages/PanoramaPage.jsx";
 import TerritoriesPage from "./pages/TerritoriesPage.jsx";
 import InstitutionProfilePage from "./pages/InstitutionProfilePage.jsx";
 import { formatNumber, normalizeText } from "./utils/format.js";
-import "./styles/api.css";
 
 const navigation = [
   ["panorama", "Panorama", "◫"],

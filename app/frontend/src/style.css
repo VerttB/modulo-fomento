@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import "./styles/app.css";
+@import "./styles/api.css";
+@import "./styles/utilities.css";
+
+@config "../tailwind.config.js";
+
+:root {
+  color-scheme: light;
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-app);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-optical-sizing: auto;
+  font-weight: 400;
+
+  --color-app: #f5f7f7;
+  --color-ink: #183633;
+  --color-brand: #07877f;
+  --color-brand-dark: #0c554f;
+  --color-surface: #ffffff;
+  --color-border: #e8eeec;
+  --color-border-soft: #edf1ef;
+  --color-muted: #7c8c89;
+  --color-success: #35815b;
+  --color-warning: #98743d;
+  --color-danger: #a35049;
+  --color-info: #5878aa;
+
+  --font-sans: "Segoe UI", Arial, sans-serif;
+  --font-display: Manrope, "Segoe UI", Arial, sans-serif;
+
+  --text-caption: 0.75rem;
+  --text-body: 0.9375rem;
+  --text-heading: 1.6875rem;
+
+  --radius-control: 0.4375rem;
+  --radius-panel: 0.625rem;
+
+  --spacing-page: 2.5rem;
+  --spacing-section: 1rem;
+
+  /* Aliases kept for existing component styles while they migrate to tokens. */
+  --line: var(--color-border);
+  --ink: var(--color-ink);
+  --teal: var(--color-brand);
+  --deep: var(--color-brand-dark);
+  --paper: var(--color-surface);
+  --muted: var(--color-muted);
+  --mint: #e7f4f1;
+}

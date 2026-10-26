@@ -12,7 +12,7 @@ docker-compose.yml
 
 ## Executar com Docker
 
-Copie `.env.example` para `.env`, defina uma senha forte em `POSTGRES_PASSWORD` e então execute `docker compose up --build` na raiz. A interface ficará em `http://localhost:5173`, a API em `http://localhost:10010` e a documentação em `http://localhost:10010/docs`.
+Copie `.env.example` para `.env`, defina uma senha forte em `POSTGRES_PASSWORD` e confira `VITE_API_BASE_URL` e `CORS_ALLOWED_ORIGINS` para os endereços da interface e da API. Então execute `docker compose up --build` na raiz. A interface ficará em `http://localhost:5173`, a API em `http://localhost:10010` e a documentação em `http://localhost:10010/docs`.
 
 ## Executar localmente
 

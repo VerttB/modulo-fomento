@@ -29,6 +29,7 @@ class Config(BaseSettings):
     ingest_batch_size: int = Field(gt=0)
     ingest_checkpoint_interval: int = Field(gt=0)
     log_level: str
+    cors_allowed_origins: str
 
     @field_validator(
         "territorios_csv_path", "populacao_municipios_csv_path", "ingestoes_path",

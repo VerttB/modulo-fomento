@@ -8,6 +8,7 @@ import {
   getIngestionExecutions,
   getIngestionSummary,
   getIngestionsPage,
+  rebuildIngestionTrace,
   resumeIngestion,
   uploadIngestion,
 } from "../../services/ingestoes";
@@ -81,7 +82,7 @@ export default function IngestionsPanel({ onApiStateChange }) {
     setNotice("O envio e a ingestão podem levar alguns minutos; o processamento é salvo em lotes.");
     try {
       const result = await uploadIngestion(file);
-      setNotice(`Ingestão ${result.ingestao_id}: ${formatNumber(result.linhas_processadas)} linha(s) inserida(s), ${formatNumber(result.bolsas_conflitantes)} bolsa(s) em conflito.`);
+      setNotice(`Ingestão ${result.ingestao_id}: ${formatNumber(result.linhas_processadas)} linha(s) inserida(s), ${formatNumber(result.bolsas_conflitantes)} registro(s) de bolsistas em conflito.`);
       setFile(null); form.reset(); setPage(1); setSelectedId(""); setState("loading");
       setRevision((value) => value + 1);
     } catch (cause) { setError(getErrorMessage(cause)); setSelectedId(""); setState("loading"); setRevision((value) => value + 1); }
@@ -93,9 +94,22 @@ export default function IngestionsPanel({ onApiStateChange }) {
     try {
       const result = await resumeIngestion(id);
       setSelectedId(id);
-      setNotice(`Retomada concluída: ${formatNumber(result.linhas_processadas)} linha(s) inserida(s), ${formatNumber(result.bolsas_conflitantes)} bolsa(s) em conflito.`);
+      setNotice(`Retomada concluída: ${formatNumber(result.linhas_processadas)} linha(s) inserida(s), ${formatNumber(result.bolsas_conflitantes)} registro(s) de bolsistas em conflito.`);
       setRevision((value) => value + 1);
     } catch (cause) { setError(getErrorMessage(cause)); setRevision((value) => value + 1); }
+    finally { setBusy(false); }
+  }
+
+  async function rebuildTrace(id) {
+    setBusy(true); setError(""); setNotice("Conferindo o arquivo original e reconstruindo as linhas sem rastreabilidade…");
+    try {
+      const result = await rebuildIngestionTrace(id);
+      setSelectedId(id);
+      setNotice(
+        `${formatNumber(result.linhas_reconstruidas)} linha(s) recuperada(s), incluindo ${formatNumber(result.linhas_duplicadas_reconstruidas)} duplicata(s). Os CPFs não são persistidos.`,
+      );
+      setRevision((value) => value + 1);
+    } catch (cause) { setError(getErrorMessage(cause)); }
     finally { setBusy(false); }
   }
 
@@ -126,7 +140,7 @@ export default function IngestionsPanel({ onApiStateChange }) {
       data={data} state={state} error={historyError} selectedId={selectedId} busy={busy}
       selectedSource={selectedSource} summary={summary} executions={executions} summaryLoading={summaryLoading}
       onSelect={setSelectedId} onPageChange={setPage} onRefresh={() => setRevision((value) => value + 1)}
-      onResume={resume} onDownload={download}
+      onResume={resume} onDownload={download} onRebuildTrace={rebuildTrace}
     />
     {selectedId && !selectedSource && state === "loading" ? <section className="panel"><EmptyState message="Carregando a fonte selecionada…" /></section> : null}
     {selectedId && <IngestionTraceTable sourceId={selectedId} revision={revision} />}

@@ -25,6 +25,7 @@ from src.services.ingestao import (
     resumo_ingestao,
 )
 from src.use_cases.v1.ingest.execute import retomar_ingestao
+from src.use_cases.v1.ingest.rebuild_trace import reconstruir_rastreabilidade
 
 
 router = APIRouter(prefix="/ingestoes", tags=["Ingestões"])
@@ -95,6 +96,11 @@ def listar_eventos(
 @router.post("/{ingestao_id}/retomar")
 def retomar(ingestao_id: UUID, db: Session = Depends(get_db)):
     return retomar_ingestao(db, ingestao_id)
+
+
+@router.post("/{ingestao_id}/rastreabilidade/reconstruir")
+def reconstruir_linhas(ingestao_id: UUID, db: Session = Depends(get_db)):
+    return reconstruir_rastreabilidade(db, ingestao_id)
 
 
 @router.get("/{ingestao_id}/arquivo")

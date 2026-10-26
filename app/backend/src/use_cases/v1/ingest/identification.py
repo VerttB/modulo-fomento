@@ -113,12 +113,16 @@ def identify_with_checkpoints(
                         checkpoint.erro = None
                     complete += 1
                 except ExternalLookupError:
-                    message = (
-                        f"Falha na consulta externa para as linhas "
-                        f"{min(item[0] for item in person_rows)}–"
-                        f"{max(item[0] for item in person_rows)}."
-                    )
+                    source_lines = sorted(item[0] for item in person_rows)
+                    message = "Falha na consulta externa para as linhas do arquivo: " + ", ".join(
+                        str(line) for line in source_lines
+                    ) + "."
                     errors.append(message)
+                    logger.warning(
+                        "Falha de identificação na ingestão %s; linhas físicas do arquivo: %s",
+                        ingestao.id,
+                        ", ".join(str(line) for line in source_lines),
+                    )
                     for checkpoint in person_checkpoints:
                         checkpoint.erro = message
                         checkpoint.status = IngestaoLinhaStatus.ERRO

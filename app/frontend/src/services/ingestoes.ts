@@ -59,6 +59,12 @@ export function resumeIngestion(id: string): Promise<IngestResponse> {
   return requestJson(`${API_BASE}/ingestoes/${id}/retomar`, undefined, { method: "POST" });
 }
 
+export function rebuildIngestionTrace(
+  id: string,
+): Promise<{ ingestao_id: string; linhas_reconstruidas: number; linhas_duplicadas_reconstruidas: number }> {
+  return requestJson(`${API_BASE}/ingestoes/${id}/rastreabilidade/reconstruir`, undefined, { method: "POST" });
+}
+
 export function downloadSanitizedIngestion(id: string): Promise<Blob> {
   return requestBlob(`${API_BASE}/ingestoes/${id}/arquivo`);
 }

@@ -20,6 +20,17 @@ from src.models import (
 DEFAULT_PAGE_SIZE = 30
 
 
+def _selected_values(value: str | list[str] | None) -> list[str]:
+    if value is None:
+        return []
+    values = [value] if isinstance(value, str) else value
+    return [item.strip() for item in values if item and item.strip()]
+
+
+def _matches_any(column, values: list[str]):
+    return or_(*(column.ilike(value) for value in values))
+
+
 def _paginar(db: Session, query, page: int, size: int):
     total = db.scalar(select(func.count()).select_from(query.subquery()))
     items = list(db.scalars(query.limit(size).offset((page - 1) * size)))
@@ -27,12 +38,12 @@ def _paginar(db: Session, query, page: int, size: int):
 
 
 def _construir_consulta_bolsas(
-    area: str | None = None,
-    grande_area: str | None = None,
-    universidade: str | None = None,
-    cidade: str | None = None,
-    territorio_identidade: str | None = None,
-    modalidade: str | None = None,
+    area: str | list[str] | None = None,
+    grande_area: str | list[str] | None = None,
+    universidade: str | list[str] | None = None,
+    cidade: str | list[str] | None = None,
+    territorio_identidade: str | list[str] | None = None,
+    modalidade: str | list[str] | None = None,
     ano_inicio: int | None = None,
     ano_fim: int | None = None,
     status: BolsaStatus | None = None,
@@ -65,57 +76,69 @@ def _construir_consulta_bolsas(
             .outerjoin(parent, selected.pai_id == parent.id)
             .outerjoin(root, parent.pai_id == root.id)
         )
-        if area:
-            query = query.where(
-                or_(
-                    and_(
-                        selected.tipo == AreaConhecimentoTipo.AREA,
-                        selected.termo.ilike(f"%{area}%"),
-                    ),
-                    and_(
-                        selected.tipo == AreaConhecimentoTipo.SUBAREA,
-                        parent.termo.ilike(f"%{area}%"),
-                    ),
+        area_conditions = [
+            or_(
+                and_(
+                    selected.tipo == AreaConhecimentoTipo.AREA,
+                    selected.termo.ilike(value),
+                ),
+                and_(
+                    selected.tipo == AreaConhecimentoTipo.SUBAREA,
+                    parent.termo.ilike(value),
                 )
             )
-        if grande_area:
-            query = query.where(
-                or_(
-                    and_(
-                        selected.tipo == AreaConhecimentoTipo.GRANDE_AREA,
-                        selected.termo.ilike(f"%{grande_area}%"),
-                    ),
-                    and_(
-                        selected.tipo == AreaConhecimentoTipo.AREA,
-                        parent.termo.ilike(f"%{grande_area}%"),
-                    ),
-                    and_(
-                        selected.tipo == AreaConhecimentoTipo.SUBAREA,
-                        root.termo.ilike(f"%{grande_area}%"),
-                    ),
+            for value in _selected_values(area)
+        ]
+        if area_conditions:
+            query = query.where(or_(*area_conditions))
+        large_area_conditions = [
+            or_(
+                and_(
+                    selected.tipo == AreaConhecimentoTipo.GRANDE_AREA,
+                    selected.termo.ilike(value),
+                ),
+                and_(
+                    selected.tipo == AreaConhecimentoTipo.AREA,
+                    parent.termo.ilike(value),
+                ),
+                and_(
+                    selected.tipo == AreaConhecimentoTipo.SUBAREA,
+                    root.termo.ilike(value),
                 )
             )
+            for value in _selected_values(grande_area)
+        ]
+        if large_area_conditions:
+            query = query.where(or_(*large_area_conditions))
     
-    if universidade:
+    university_values = _selected_values(universidade)
+    if university_values:
         query = query.join(Instituicao, Bolsa.instituicao_id == Instituicao.id)
         query = query.where(
-            (Instituicao.nome.ilike(f"%{universidade}%")) | 
-            (Instituicao.sigla.ilike(f"%{universidade}%"))
+            or_(
+                *(
+                    or_(Instituicao.nome.ilike(value), Instituicao.sigla.ilike(value))
+                    for value in university_values
+                )
+            )
         )
     
     if cidade or territorio_identidade:
         query = query.join(Pesquisador, Bolsa.pesquisador_id == Pesquisador.id)
-    if cidade:
-        query = query.where(Pesquisador.cidade.ilike(f"%{cidade}%"))
+    city_values = _selected_values(cidade)
+    if city_values:
+        query = query.where(_matches_any(Pesquisador.cidade, city_values))
 
-    if territorio_identidade:
+    territory_values = _selected_values(territorio_identidade)
+    if territory_values:
         query = query.join(
             TerritorioIdentidade,
             Pesquisador.territorio_identidade_id == TerritorioIdentidade.id,
-        ).where(TerritorioIdentidade.nome.ilike(f"%{territorio_identidade}%"))
+        ).where(_matches_any(TerritorioIdentidade.nome, territory_values))
     
-    if modalidade:
-        query = query.where(Bolsa.modalidade.ilike(f"%{modalidade}%"))
+    modality_values = _selected_values(modalidade)
+    if modality_values:
+        query = query.where(_matches_any(Bolsa.modalidade, modality_values))
     
     if ano_inicio:
         query = query.where(
@@ -167,12 +190,12 @@ def listar_bolsa(
     db: Session,
     page: int = 1,
     size: int = DEFAULT_PAGE_SIZE,
-    area: str | None = None,
-    grande_area: str | None = None,
-    universidade: str | None = None,
-    cidade: str | None = None,
-    territorio_identidade: str | None = None,
-    modalidade: str | None = None,
+    area: str | list[str] | None = None,
+    grande_area: str | list[str] | None = None,
+    universidade: str | list[str] | None = None,
+    cidade: str | list[str] | None = None,
+    territorio_identidade: str | list[str] | None = None,
+    modalidade: str | list[str] | None = None,
     ano_inicio: int | None = None,
     ano_fim: int | None = None,
     status: BolsaStatus | None = None,
@@ -198,12 +221,12 @@ def listar_bolsa(
 def iterar_bolsas_exportacao(
     db: Session,
     *,
-    area: str | None = None,
-    grande_area: str | None = None,
-    universidade: str | None = None,
-    cidade: str | None = None,
-    territorio_identidade: str | None = None,
-    modalidade: str | None = None,
+    area: str | list[str] | None = None,
+    grande_area: str | list[str] | None = None,
+    universidade: str | list[str] | None = None,
+    cidade: str | list[str] | None = None,
+    territorio_identidade: str | list[str] | None = None,
+    modalidade: str | list[str] | None = None,
     ano_inicio: int | None = None,
     ano_fim: int | None = None,
     termo: str | None = None,

@@ -20,8 +20,13 @@ function filterParams(filters: ScholarshipFilters, institutionParameter: string)
   for (const [key, apiField] of Object.entries(filterFields) as Array<
     [keyof ScholarshipFilters, string]
   >) {
-    const value = filters[key].trim();
-    if (value) params.set(key === "institution" ? institutionParameter : apiField, value);
+    const value = filters[key];
+    const parameter = key === "institution" ? institutionParameter : apiField;
+    if (Array.isArray(value)) {
+      value.filter((item) => item.trim()).forEach((item) => params.append(parameter, item));
+    } else if (value.trim()) {
+      params.set(parameter, value);
+    }
   }
   return params;
 }
@@ -58,4 +63,12 @@ export async function exportScholarships(
   const params = filterParams(filters, "universidade");
   if (search.trim()) params.set("termo", search.trim());
   return requestBlob(`${API_BASE}/bolsas/exportar?${params.toString()}`, { signal });
+}
+
+export async function exportScholarshipSummary(
+  filters: ScholarshipFilters,
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const params = filterParams(filters, "universidade");
+  return requestBlob(`${API_BASE}/bolsas/exportar-resumo?${params.toString()}`, { signal });
 }

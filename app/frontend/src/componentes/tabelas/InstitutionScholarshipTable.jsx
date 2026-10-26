@@ -1,7 +1,7 @@
 import EmptyState from "../ui/EmptyState.jsx";
 
 export default function InstitutionScholarshipTable({ items }) {
-  if (!items.length) return <EmptyState message="Nenhuma bolsa encontrada para esta instituição." />;
+  if (!items.length) return <EmptyState message="Nenhum registro de bolsista encontrado para esta instituição." />;
   return <div className="data-table-wrap"><table><thead><tr>
     <th>PESQUISADOR(A)</th><th>PROJETO</th><th>MODALIDADE</th><th>INÍCIO</th><th>FIM</th><th>STATUS</th>
   </tr></thead><tbody>{items.map((item) => <tr key={item.id}>

@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, Uuid, column, func, select, table, text
+from sqlalchemy import Integer, String, Uuid, column, func, or_, select, table, text
 from sqlalchemy.orm import Session
 from uuid import UUID
 
@@ -7,6 +7,17 @@ from src.services.populacao_municipios import (
     carregar_populacao_municipios,
     normalizar_municipio,
 )
+
+
+def _selected_values(value: str | list[str] | None) -> list[str]:
+    if value is None:
+        return []
+    values = [value] if isinstance(value, str) else value
+    return [item.strip() for item in values if item and item.strip()]
+
+
+def _matches_any(column, values: list[str]):
+    return or_(*(column.ilike(value) for value in values))
 
 
 METRICAS_BOLSAS = table(
@@ -29,12 +40,12 @@ METRICAS_BOLSAS = table(
 def _filtered(
     ano_inicio,
     ano_fim,
-    modalidade,
-    cidade,
-    instituicao,
-    area,
-    grande_area,
-    territorio_identidade,
+    modalidades,
+    cidades,
+    instituicoes,
+    areas,
+    grandes_areas,
+    territorios,
     instituicao_id,
 ):
     query = select(*METRICAS_BOLSAS.c)
@@ -43,27 +54,34 @@ def _filtered(
         filters.append(METRICAS_BOLSAS.c.ano_inicio >= ano_inicio)
     if ano_fim is not None:
         filters.append(METRICAS_BOLSAS.c.ano_inicio <= ano_fim)
-    if modalidade:
-        filters.append(METRICAS_BOLSAS.c.modalidade == modalidade)
-    if cidade:
-        filters.append(METRICAS_BOLSAS.c.cidade.ilike(f"%{cidade}%"))
-    if instituicao:
+    modality_values = _selected_values(modalidades)
+    if modality_values:
+        filters.append(_matches_any(METRICAS_BOLSAS.c.modalidade, modality_values))
+    city_values = _selected_values(cidades)
+    if city_values:
+        filters.append(_matches_any(METRICAS_BOLSAS.c.cidade, city_values))
+    institution_values = _selected_values(instituicoes)
+    if institution_values:
         filters.append(
-            METRICAS_BOLSAS.c.instituicao_nome.ilike(f"%{instituicao}%")
-            | METRICAS_BOLSAS.c.instituicao_sigla.ilike(f"%{instituicao}%")
+            or_(
+                *(
+                    METRICAS_BOLSAS.c.instituicao_nome.ilike(value)
+                    | METRICAS_BOLSAS.c.instituicao_sigla.ilike(value)
+                    for value in institution_values
+                )
+            )
         )
     if instituicao_id:
         filters.append(METRICAS_BOLSAS.c.instituicao_id == instituicao_id)
-    if area:
-        filters.append(METRICAS_BOLSAS.c.area.ilike(f"%{area}%"))
-    if grande_area:
-        filters.append(METRICAS_BOLSAS.c.grande_area.ilike(f"%{grande_area}%"))
-    if territorio_identidade:
-        filters.append(
-            METRICAS_BOLSAS.c.territorio_identidade.ilike(
-                f"%{territorio_identidade}%"
-            )
-        )
+    area_values = _selected_values(areas)
+    if area_values:
+        filters.append(_matches_any(METRICAS_BOLSAS.c.area, area_values))
+    large_area_values = _selected_values(grandes_areas)
+    if large_area_values:
+        filters.append(_matches_any(METRICAS_BOLSAS.c.grande_area, large_area_values))
+    territory_values = _selected_values(territorios)
+    if territory_values:
+        filters.append(_matches_any(METRICAS_BOLSAS.c.territorio_identidade, territory_values))
     return query.where(*filters).subquery("bolsas_filtradas")
 
 
@@ -82,12 +100,12 @@ def relatorio_bolsas(
     db: Session,
     ano_inicio: int | None = None,
     ano_fim: int | None = None,
-    modalidade: str | None = None,
-    cidade: str | None = None,
-    instituicao: str | None = None,
-    area: str | None = None,
-    grande_area: str | None = None,
-    territorio_identidade: str | None = None,
+    modalidade: str | list[str] | None = None,
+    cidade: str | list[str] | None = None,
+    instituicao: str | list[str] | None = None,
+    area: str | list[str] | None = None,
+    grande_area: str | list[str] | None = None,
+    territorio_identidade: str | list[str] | None = None,
     instituicao_id: UUID | None = None,
 ) -> dict:
     source = _filtered(

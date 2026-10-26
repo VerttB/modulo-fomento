@@ -229,7 +229,7 @@ export default function MapaCidades({
               <dl>
                 <div><dt>População estimada</dt><dd>{formatNumber(selectedTerritory.population)} habitantes</dd></div>
                 <div><dt>Cidades envolvidas</dt><dd>{formatNumber(selectedTerritory.cities.length)} municípios</dd></div>
-                <div><dt>Bolsas no recorte atual</dt><dd>{formatNumber(selectedTerritory.scholarships)}</dd></div>
+                <div><dt>Registros de bolsistas no recorte atual</dt><dd>{formatNumber(selectedTerritory.scholarships)}</dd></div>
               </dl>
               <div className="territory-city-list" aria-label={`Municípios de ${selectedTerritory.name}`}>
                 {selectedTerritory.cities.slice().sort((a, b) => a.name.localeCompare(b.name, "pt-BR")).map((city) => (
@@ -247,7 +247,7 @@ export default function MapaCidades({
               <dl>
                 <div><dt>Território de identidade</dt><dd>{selectedCity.territorio_identidade || "Não identificado"}</dd></div>
                 <div><dt>População estimada</dt><dd>{formatNumber(selectedCity.populacao_estimada)} habitantes</dd></div>
-                <div><dt>Bolsas no recorte atual</dt><dd>{formatNumber(selectedCityScholarships)}</dd></div>
+                <div><dt>Registros de bolsistas no recorte atual</dt><dd>{formatNumber(selectedCityScholarships)}</dd></div>
               </dl>
               <button type="button" onClick={() => setSelection(null)}>Limpar seleção</button>
             </div>

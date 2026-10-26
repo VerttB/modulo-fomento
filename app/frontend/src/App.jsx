@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { exportScholarships, getScholarshipPage, getStatistics } from "./services/bolsas";
+import { exportScholarshipSummary, exportScholarships, getScholarshipPage, getStatistics } from "./services/bolsas";
 import { getErrorMessage } from "./services/http";
 import { getResearchersPage } from "./services/pesquisadores";
 import { getProjectsPage } from "./services/projetos";
@@ -21,13 +21,13 @@ const navigation = [
   ["panorama", "Panorama", "◫"],
   ["indicadores", "Indicadores", "▥"],
   ["territorios", "Territórios", "⌖"],
-  ["bolsas", "Bolsas", "▤"],
+  ["bolsas", "Bolsistas", "▤"],
   ["pesquisadores", "Pesquisadores", "♙"],
   ["projetos", "Projetos", "◇"],
   ["instituicoes", "Instituições", "⌂"],
   ["maria", "Consulta guiada", "✳"],
 ];
-const initialFilters = { from: "", to: "", modality: "", city: "", institution: "", area: "", largeArea: "", territory: "" };
+const initialFilters = { from: "", to: "", modality: [], city: [], institution: [], area: [], largeArea: [], territory: [] };
 const labelFor = (view) => view === "ingestoes" ? "Ingestões" : navigation.find(([id]) => id === view)?.[1] || "Panorama";
 const directoryViews = ["instituicoes", "pesquisadores", "projetos", "bolsas"];
 const reportViews = ["panorama", "indicadores", "territorios", "maria"];
@@ -48,6 +48,7 @@ export default function App() {
   const [listState, setListState] = useState("loading");
   const [listError, setListError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [summaryExporting, setSummaryExporting] = useState(false);
   const [exportError, setExportError] = useState("");
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
@@ -151,12 +152,27 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "bolsas-fapesb.csv";
+      link.download = "bolsistas-fapesb.csv";
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (cause) { setExportError(getErrorMessage(cause)); }
     finally { setExporting(false); }
   }, [filters, searchTerm, view]);
+
+  const exportSummary = useCallback(async () => {
+    setSummaryExporting(true);
+    setExportError("");
+    try {
+      const blob = await exportScholarshipSummary(filters);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "resumo-bolsistas-fapesb.csv";
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (cause) { setExportError(getErrorMessage(cause)); }
+    finally { setSummaryExporting(false); }
+  }, [filters]);
 
   const synchronizeTerritories = useCallback(async () => {
     setSyncingTerritories(true);
@@ -188,10 +204,10 @@ export default function App() {
           : selected[0] === "territorio" ? metricRows(report.por_territorio_identidade, "territorio_identidade")
             : institutionRows;
       const match = rows.find((item) => normalizeText(item.label) === normalizeText(selected[1]));
-      setAnswer(match ? `${match.label}: ${formatNumber(match.total)} bolsas no recorte selecionado.` : "Não encontrei esse recorte entre os dados agregados disponíveis.");
+      setAnswer(match ? `${match.label}: ${formatNumber(match.total)} registros de bolsistas no recorte selecionado.` : "Não encontrei esse recorte entre os dados agregados disponíveis.");
       return;
     }
-    setAnswer(`${formatNumber(report.total)} bolsas no recorte atual, em ${formatNumber(report.por_cidade?.length || 0)} municípios e ${formatNumber(report.por_instituicao?.length || 0)} instituições. Consulte os indicadores para detalhar por modalidade, cidade, instituição, área ou território.`);
+    setAnswer(`${formatNumber(report.total)} registros de bolsistas no recorte atual, em ${formatNumber(report.por_cidade?.length || 0)} municípios e ${formatNumber(report.por_instituicao?.length || 0)} instituições. Consulte os indicadores para detalhar por modalidade, cidade, instituição, área ou território.`);
   }
 
   function setFilter(key, value) {
@@ -237,7 +253,7 @@ export default function App() {
       <main className="main-area">
         <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav((open) => !open)} aria-label="Abrir menu">☰</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>
         <div className="page-content">
-          <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Explore os dados" : view === "panorama" ? "Panorama de bolsas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <button className="export-button" disabled={!canExport || exporting} onClick={exportResults}><span>↓</span> {exporting ? "Exportando bolsas…" : "Exportar CSV"}</button>}</div>
+          <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Explore os dados" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><button className="export-button" disabled={!canExport || exporting} onClick={exportResults}><span>↓</span> {exporting ? "Preparando…" : "Exportar registros"}</button><button className="export-button export-summary-button" disabled={!canExport || summaryExporting} onClick={exportSummary}><span>▦</span> {summaryExporting ? "Preparando…" : "Exportar resumo"}</button></div>}</div>
           {directoryViews.includes(view) && <form className="search-toolbar" onSubmit={(event) => { event.preventDefault(); setListPage(1); setSearchTerm(searchDraft.trim()); }}>
             <span aria-hidden="true">⌕</span><input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={view === "bolsas" ? "Buscar pessoa, projeto, instituição, modalidade ou cidade…" : view === "instituicoes" ? "Buscar instituição por nome ou sigla…" : view === "pesquisadores" ? "Buscar por nome, cidade ou Lattes…" : "Buscar por título, resumo ou área…"} aria-label="Buscar registros" />
             <button type="submit">Buscar</button>{(searchTerm || searchDraft) && <button type="button" className="search-clear" onClick={() => { setSearchDraft(""); setSearchTerm(""); setListPage(1); }}>Limpar</button>}

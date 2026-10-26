@@ -23,7 +23,7 @@ export default function PopulationRateList({ items = [], labelKey, emptyMessage 
         <span>{formatRate(item.bolsas_por_10_mil_habitantes)} / 10 mil</span>
       </div>
       <div className="bar-track"><span style={{ width: `${Math.max((item.bolsas_por_10_mil_habitantes / max) * 100, 3)}%` }} /></div>
-      <small>{formatNumber(item.total)} bolsas · população {formatNumber(item.populacao_estimada)}</small>
+      <small>{formatNumber(item.total)} registros de bolsistas · população {formatNumber(item.populacao_estimada)}</small>
     </div>)}
   </div>;
 }

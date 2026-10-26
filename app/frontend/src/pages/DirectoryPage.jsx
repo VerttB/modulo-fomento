@@ -10,7 +10,7 @@ const directoryConfig = {
   instituicoes: { title: "Instituições", subtitle: "Selecione uma instituição para explorar seu perfil de fomento." },
   pesquisadores: { title: "Pesquisadores", subtitle: "Registros paginados da API" },
   projetos: { title: "Projetos", subtitle: "Registros paginados da API" },
-  bolsas: { title: "Bolsas", subtitle: "Registros, status e conflitos no recorte filtrado." },
+  bolsas: { title: "Bolsistas", subtitle: "Registros, situação e conflitos no recorte filtrado." },
 };
 
 const directoryTable = {

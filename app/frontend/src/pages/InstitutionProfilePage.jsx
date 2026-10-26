@@ -22,7 +22,7 @@ const tabs = [
   ["resumo", "Resumo"],
   ["pesquisadores", "Pesquisadores"],
   ["projetos", "Projetos"],
-  ["bolsas", "Bolsas"],
+  ["bolsas", "Bolsistas"],
 ];
 
 export default function InstitutionProfilePage({ institution, onBack, onApiStateChange }) {
@@ -94,9 +94,9 @@ export default function InstitutionProfilePage({ institution, onBack, onApiState
   return <section className="institution-profile">
     <button className="back-link" onClick={onBack}>← Voltar para instituições</button>
     <section className="metric-grid institution-metrics">
-      <MetricCard label="Bolsas" value={formatNumber(report.total)} hint="no período e filtros da base" icon="▤" accent="teal" />
-      <MetricCard label="Pesquisadores" value={formatNumber(profile.total_pesquisadores)} hint="vinculados a bolsas da instituição" icon="♙" accent="violet" />
-      <MetricCard label="Projetos" value={formatNumber(profile.total_projetos)} hint="com bolsas associadas" icon="◇" accent="orange" />
+      <MetricCard label="Registros de bolsistas" value={formatNumber(report.total)} hint="no período e filtros da base" icon="▤" accent="teal" />
+      <MetricCard label="Pesquisadores" value={formatNumber(profile.total_pesquisadores)} hint="vinculados a registros de apoio da instituição" icon="♙" accent="violet" />
+      <MetricCard label="Projetos" value={formatNumber(profile.total_projetos)} hint="com bolsistas associados" icon="◇" accent="orange" />
       <MetricCard label="Municípios" value={formatNumber(report.por_cidade?.length || 0)} hint="de origem dos pesquisadores" icon="⌖" accent="blue" />
     </section>
 
@@ -106,14 +106,14 @@ export default function InstitutionProfilePage({ institution, onBack, onApiState
 
     {tab === "resumo" ? <>
       <section className="analytics-grid">
-        <article className="panel"><PanelHeader title="Evolução das bolsas" subtitle="Quantidade por ano de início" action="" /><TrendChart values={report.por_ano || []} /></article>
+        <article className="panel"><PanelHeader title="Evolução dos registros de bolsistas" subtitle="Quantidade por ano de início" action="" /><TrendChart values={report.por_ano || []} /></article>
         <article className="panel"><PanelHeader title="Modalidades" subtitle="Distribuição do apoio" action="" /><BarList items={modalities.slice(0, 8)} tone="teal" /></article>
       </section>
       <section className="analytics-grid">
         <article className="panel"><PanelHeader title="Áreas do conhecimento" subtitle="Projetos apoiados pela instituição" action="" /><BarList items={areas.slice(0, 8)} tone="violet" /></article>
-        <article className="panel"><PanelHeader title="Municípios por taxa populacional" subtitle="Bolsas a cada 10 mil habitantes" action="" /><PopulationRateList items={report.por_cidade} labelKey="cidade" /></article>
+        <article className="panel"><PanelHeader title="Municípios por taxa populacional" subtitle="Registros de bolsistas a cada 10 mil habitantes" action="" /><PopulationRateList items={report.por_cidade} labelKey="cidade" /></article>
       </section>
-      <section className="panel full-panel"><PanelHeader title="Territórios de identidade" subtitle="Bolsas a cada 10 mil habitantes do território" action="" /><PopulationRateList items={report.por_territorio_identidade} labelKey="territorio_identidade" /></section>
+      <section className="panel full-panel"><PanelHeader title="Territórios de identidade" subtitle="Registros de bolsistas a cada 10 mil habitantes do território" action="" /><PopulationRateList items={report.por_territorio_identidade} labelKey="territorio_identidade" /></section>
     </> : <article className="panel table-panel">
       <PanelHeader title={tabs.find(([id]) => id === tab)?.[1]} subtitle={`${institution.nome || "Instituição"}${institution.sigla ? ` · ${institution.sigla}` : ""}`} action="" />
       {pageState === "loading" ? <EmptyState message="Carregando registros…" />

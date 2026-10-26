@@ -24,20 +24,89 @@ from src.services.populacao_municipios import (
     normalizar_municipio,
 )
 from src.services.privacidade import sanitizar_texto_livre
+from src.services.territory_csv import load_city_territories
+from src.services.ingest_reader import normalizar
 
 router = APIRouter(prefix="/bolsas", tags=["Bolsas"])
+
+
+@router.get("/exportar-resumo", response_class=StreamingResponse)
+def exportar_resumo(
+    area: list[str] | None = Query(None),
+    grande_area: list[str] | None = Query(None),
+    universidade: list[str] | None = Query(None),
+    cidade: list[str] | None = Query(None),
+    territorio_identidade: list[str] | None = Query(None),
+    modalidade: list[str] | None = Query(None),
+    ano_inicio: int | None = Query(None, ge=1900, le=2100),
+    ano_fim: int | None = Query(None, ge=1900, le=2100),
+    db: Session = Depends(get_db),
+):
+    report = relatorio_bolsas(
+        db,
+        ano_inicio=ano_inicio,
+        ano_fim=ano_fim,
+        modalidade=modalidade,
+        cidade=cidade,
+        instituicao=universidade,
+        area=area,
+        grande_area=grande_area,
+        territorio_identidade=territorio_identidade,
+    )
+    city_territories = load_city_territories(settings.territorios_csv_path)
+    rows = []
+    for item in report["por_territorio_identidade"]:
+        rows.append(["Território", item["territorio_identidade"], "", "", item["total"]])
+    for item in report["por_cidade"]:
+        territory = city_territories.get(normalizar(item["cidade"] or ""), "")
+        rows.append(["Cidade", territory, item["cidade"], "", item["total"]])
+    for item in report["por_instituicao"]:
+        university = (
+            f"{item['sigla']} — {item['nome']}"
+            if item["sigla"] and item["nome"]
+            else item["sigla"] or item["nome"] or ""
+        )
+        rows.append(["Universidade", "", "", university, item["total"]])
+
+    def csv_stream():
+        buffer = io.StringIO(newline="")
+        writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
+        writer.writerow(
+            ["Recorte", "Território de identidade", "Cidade", "Universidade", "Quantidade de registros de bolsistas"]
+        )
+        yield "\ufeff" + buffer.getvalue()
+        for row in rows:
+            buffer.seek(0)
+            buffer.truncate(0)
+            writer.writerow(
+                [
+                    f"'{sanitizar_texto_livre(value)}"
+                    if isinstance(value, str) and value.startswith(("=", "+", "-", "@"))
+                    else sanitizar_texto_livre(value)
+                    if isinstance(value, str)
+                    else value
+                    for value in row
+                ]
+            )
+            yield buffer.getvalue()
+
+    return StreamingResponse(
+        csv_stream(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="resumo-bolsistas-fapesb.csv"'},
+    )
 
 
 @router.get("/", response_model=PaginatedResponse[BolsaRead])
 def listar(
     page: int = Query(1, ge=1, description="Número da página"),
     size: int = Query(30, ge=1, le=100, description="Tamanho da página"),
-    area: str | None = Query(None, description="Filtrar por área"),
-    grande_area: str | None = Query(None, description="Filtrar por grande área"),
-    universidade: str | None = Query(None, description="Filtrar por universidade (nome ou sigla)"),
-    cidade: str | None = Query(None, description="Filtrar por cidade do pesquisador"),
-    territorio_identidade: str | None = Query(None, description="Filtrar por território de identidade"),
-    modalidade: str | None = Query(None, description="Filtrar pela modalidade informada no arquivo"),
+    area: list[str] | None = Query(None, description="Filtrar por uma ou mais áreas"),
+    grande_area: list[str] | None = Query(None, description="Filtrar por uma ou mais grandes áreas"),
+    universidade: list[str] | None = Query(None, description="Filtrar por uma ou mais instituições"),
+    cidade: list[str] | None = Query(None, description="Filtrar por um ou mais municípios do pesquisador"),
+    territorio_identidade: list[str] | None = Query(None, description="Filtrar por um ou mais territórios de identidade"),
+    modalidade: list[str] | None = Query(None, description="Filtrar por uma ou mais modalidades"),
     ano_inicio: int | None = Query(None, ge=1900, le=2100, description="Ano de início (mínimo)"),
     ano_fim: int | None = Query(None, ge=1900, le=2100, description="Ano de fim (máximo)"),
     status: BolsaStatus | None = Query(None, description="Filtrar pelo status da bolsa"),
@@ -63,12 +132,12 @@ def listar(
 
 @router.get("/exportar", response_class=StreamingResponse)
 def exportar(
-    area: str | None = Query(None),
-    grande_area: str | None = Query(None),
-    universidade: str | None = Query(None),
-    cidade: str | None = Query(None),
-    territorio_identidade: str | None = Query(None),
-    modalidade: str | None = Query(None),
+    area: list[str] | None = Query(None),
+    grande_area: list[str] | None = Query(None),
+    universidade: list[str] | None = Query(None),
+    cidade: list[str] | None = Query(None),
+    territorio_identidade: list[str] | None = Query(None),
+    modalidade: list[str] | None = Query(None),
     ano_inicio: int | None = Query(None, ge=1900, le=2100),
     ano_fim: int | None = Query(None, ge=1900, le=2100),
     termo: str | None = Query(None, max_length=150),
@@ -78,7 +147,7 @@ def exportar(
         str(settings.populacao_municipios_csv_path)
     )
     headers = [
-        "Bolsa ID", "Pesquisador", "Lattes", "Cidade", "População estimada",
+        "Registro ID", "Pesquisador", "Lattes", "Cidade", "População estimada",
         "Território de identidade", "Projeto", "Resumo", "Grande área", "Área",
         "Subárea", "Instituição", "Sigla instituição", "Modalidade", "Curso",
         "Data inicial", "Data saída pesquisador", "Data final", "CEP de referência",
@@ -179,18 +248,18 @@ def exportar(
     return StreamingResponse(
         csv_stream(),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="bolsas-fapesb.csv"'},
+        headers={"Content-Disposition": 'attachment; filename="bolsistas-fapesb.csv"'},
     )
 @router.get("/estatisticas", response_model=EstatisticasBolsas)
 def estatisticas(
     ano_inicio: int | None = Query(None, ge=1900, le=2100),
     ano_fim: int | None = Query(None, ge=1900, le=2100),
-    modalidade: str | None = Query(None),
-    cidade: str | None = Query(None),
-    instituicao: str | None = Query(None),
-    area: str | None = Query(None),
-    grande_area: str | None = Query(None),
-    territorio_identidade: str | None = Query(None),
+    modalidade: list[str] | None = Query(None),
+    cidade: list[str] | None = Query(None),
+    instituicao: list[str] | None = Query(None),
+    area: list[str] | None = Query(None),
+    grande_area: list[str] | None = Query(None),
+    territorio_identidade: list[str] | None = Query(None),
     db: Session = Depends(get_db),
 ):
     return relatorio_bolsas(

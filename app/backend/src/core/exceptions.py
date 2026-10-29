@@ -22,3 +22,7 @@ class IngestFormatError(ApplicationError):
 
 class ExternalLookupError(ApplicationError):
     status_code = 502
+
+
+class NotAcceptableError(ApplicationError):
+    status_code = 406

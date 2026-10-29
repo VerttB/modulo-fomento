@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from src.routes.area_conhecimento import router as area_conhecimento_router
 from src.routes.bolsa import router as bolsa_router
+from src.routes.exportacao import router as exportacao_router
 from src.routes.departamento import router as departamento_router
 from src.routes.instituicao import router as instituicao_router
 from src.routes.ingest import router as ingest_router
@@ -16,6 +17,7 @@ router = APIRouter()
 router.include_router(projeto_router)
 router.include_router(pesquisador_router)
 router.include_router(bolsa_router)
+router.include_router(exportacao_router)
 router.include_router(instituicao_router)
 router.include_router(departamento_router)
 router.include_router(unidade_router)

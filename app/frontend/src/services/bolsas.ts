@@ -15,10 +15,11 @@ const filterFields: Record<keyof ScholarshipFilters, string> = {
   territory: "territorio_identidade",
 };
 
-export type ExportFormat = "csv" | "xlsx";
+export type ExportFormat = "csv" | "xlsx" | "json";
 const exportAccept = {
   csv: "text/csv",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  json: "application/json",
 } satisfies Record<ExportFormat, string>;
 
 function filterParams(filters: ScholarshipFilters): URLSearchParams {
@@ -68,7 +69,7 @@ export async function exportScholarships(
 ): Promise<Blob> {
   const params = filterParams(filters);
   if (search.trim()) params.set("termo", search.trim());
-  return requestBlob(`${API_BASE}/bolsas/exportar?${params.toString()}`, {
+  return requestBlob(`${API_BASE}/exportacoes/bolsistas/registros?${params.toString()}`, {
     signal,
     headers: { Accept: exportAccept[format] },
   });
@@ -82,7 +83,7 @@ export async function exportScholarshipSummary(
 ): Promise<Blob> {
   const params = filterParams(filters);
   dimensions.forEach((dimension) => params.append("recorte", dimension));
-  return requestBlob(`${API_BASE}/bolsas/exportar-resumo?${params.toString()}`, {
+  return requestBlob(`${API_BASE}/exportacoes/bolsistas/resumo?${params.toString()}`, {
     signal,
     headers: { Accept: exportAccept[format] },
   });

@@ -3,12 +3,13 @@ from math import ceil
 from uuid import UUID
 
 from pydantic import BaseModel
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from src.core.exceptions import ResourceNotFoundError
 from src.models import AreaConhecimento, Projeto
 from src.services.privacidade import sanitizar_texto_livre
+from src.services.busca import construir_busca
 
 
 DEFAULT_PAGE_SIZE = 30
@@ -28,16 +29,9 @@ def listar_projeto(
 ) -> tuple[list[Projeto], int]:
     query = select(Projeto).order_by(Projeto.id)
     if termo and termo.strip():
-        pattern = f"%{termo.strip()}%"
         query = (
             query.outerjoin(Projeto.area_conhecimento)
-            .where(
-                or_(
-                    Projeto.nome.ilike(pattern),
-                    Projeto.resumo.ilike(pattern),
-                    AreaConhecimento.termo.ilike(pattern),
-                )
-            )
+            .where(construir_busca(termo, Projeto.busca, AreaConhecimento.termo))
         )
     return _paginar(db, query, page, size)
 

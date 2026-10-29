@@ -70,7 +70,6 @@ def _construir_consulta_bolsas(
         selected = aliased(AreaConhecimento)
         parent = aliased(AreaConhecimento)
         root = aliased(AreaConhecimento)
-        pattern = f"%{termo.strip()}%"
         query = (
             query.join(Projeto, Bolsa.projeto_id == Projeto.id)
             .outerjoin(selected, Projeto.area_conhecimento_id == selected.id)
@@ -152,6 +151,7 @@ def _construir_consulta_bolsas(
         )
 
     if termo and termo.strip():
+        pattern = f"%{termo.strip()}%"
         researcher_search = aliased(Pesquisador)
         project_search = aliased(Projeto)
         institution_search = aliased(Instituicao)

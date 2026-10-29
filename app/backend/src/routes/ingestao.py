@@ -16,6 +16,7 @@ from src.schemas import (
     IngestaoResumoRead,
     PaginatedResponse,
 )
+from src.schemas.paginacao import PaginacaoQuery
 from src.services.ingestao import (
     listar_eventos_linha,
     listar_execucoes_ingestao,
@@ -33,17 +34,16 @@ router = APIRouter(prefix="/ingestoes", tags=["Ingestões"])
 
 @router.get("/", response_model=PaginatedResponse[IngestaoRead])
 def listar(
-    page: int = Query(1, ge=1),
-    size: int = Query(20, ge=1, le=100),
+    paginacao: PaginacaoQuery,
     db: Session = Depends(get_db),
 ):
-    items, total = listar_ingestoes(db, page, size)
+    items, total = listar_ingestoes(db, paginacao.page, paginacao.size)
     return PaginatedResponse(
         items=items,
         total=total,
-        page=page,
-        size=size,
-        pages=(total + size - 1) // size,
+        page=paginacao.page,
+        size=paginacao.size,
+        pages=(total + paginacao.size - 1) // paginacao.size,
     )
 
 
@@ -60,21 +60,20 @@ def resumo(ingestao_id: UUID, db: Session = Depends(get_db)):
 @router.get("/{ingestao_id}/linhas", response_model=PaginatedResponse[IngestaoLinhaRead])
 def listar_linhas(
     ingestao_id: UUID,
-    page: int = Query(1, ge=1),
-    size: int = Query(25, ge=1, le=100),
+    paginacao: PaginacaoQuery,
     status: IngestaoLinhaStatus | None = None,
     termo: str | None = Query(None, max_length=120),
     db: Session = Depends(get_db),
 ):
     items, total = listar_linhas_ingestao(
-        db, ingestao_id, page, size, status, termo
+        db, ingestao_id, paginacao.page, paginacao.size, status, termo
     )
     return PaginatedResponse(
         items=items,
         total=total,
-        page=page,
-        size=size,
-        pages=(total + size - 1) // size,
+        page=paginacao.page,
+        size=paginacao.size,
+        pages=(total + paginacao.size - 1) // paginacao.size,
     )
 
 

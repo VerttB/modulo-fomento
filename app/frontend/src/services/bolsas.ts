@@ -15,17 +15,22 @@ const filterFields: Record<keyof ScholarshipFilters, string> = {
   territory: "territorio_identidade",
 };
 
-function filterParams(filters: ScholarshipFilters, institutionParameter: string): URLSearchParams {
+export type ExportFormat = "csv" | "xlsx";
+const exportAccept = {
+  csv: "text/csv",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+} satisfies Record<ExportFormat, string>;
+
+function filterParams(filters: ScholarshipFilters): URLSearchParams {
   const params = new URLSearchParams();
   for (const [key, apiField] of Object.entries(filterFields) as Array<
     [keyof ScholarshipFilters, string]
   >) {
     const value = filters[key];
-    const parameter = key === "institution" ? institutionParameter : apiField;
     if (Array.isArray(value)) {
-      value.filter((item) => item.trim()).forEach((item) => params.append(parameter, item));
+      value.filter((item) => item.trim()).forEach((item) => params.append(apiField, item));
     } else if (value.trim()) {
-      params.set(parameter, value);
+      params.set(apiField, value);
     }
   }
   return params;
@@ -35,7 +40,7 @@ export async function getStatistics(
   filters: ScholarshipFilters,
   signal?: AbortSignal,
 ): Promise<ScholarshipReport> {
-  const params = filterParams(filters, "instituicao");
+  const params = filterParams(filters);
   const query = params.size ? `?${params.toString()}` : "";
   return requestJson(`${API_BASE}/bolsas/estatisticas${query}`, signal);
 }
@@ -47,7 +52,7 @@ export async function getScholarshipPage(
   signal?: AbortSignal,
   search = "",
 ): Promise<PaginatedResponse<Bolsa>> {
-  const params = filterParams(filters, "universidade");
+  const params = filterParams(filters);
   params.set("page", String(page));
   params.set("size", String(size));
   params.set("incluir_conflitos", "true");
@@ -58,17 +63,27 @@ export async function getScholarshipPage(
 export async function exportScholarships(
   filters: ScholarshipFilters,
   search = "",
+  format: ExportFormat = "csv",
   signal?: AbortSignal,
 ): Promise<Blob> {
-  const params = filterParams(filters, "universidade");
+  const params = filterParams(filters);
   if (search.trim()) params.set("termo", search.trim());
-  return requestBlob(`${API_BASE}/bolsas/exportar?${params.toString()}`, { signal });
+  return requestBlob(`${API_BASE}/bolsas/exportar?${params.toString()}`, {
+    signal,
+    headers: { Accept: exportAccept[format] },
+  });
 }
 
 export async function exportScholarshipSummary(
   filters: ScholarshipFilters,
+  dimensions: Array<"territorio" | "cidade" | "instituicao">,
+  format: ExportFormat = "csv",
   signal?: AbortSignal,
 ): Promise<Blob> {
-  const params = filterParams(filters, "universidade");
-  return requestBlob(`${API_BASE}/bolsas/exportar-resumo?${params.toString()}`, { signal });
+  const params = filterParams(filters);
+  dimensions.forEach((dimension) => params.append("recorte", dimension));
+  return requestBlob(`${API_BASE}/bolsas/exportar-resumo?${params.toString()}`, {
+    signal,
+    headers: { Accept: exportAccept[format] },
+  });
 }

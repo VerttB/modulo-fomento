@@ -1,10 +1,11 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from src.core.database import get_db
 from src.schemas import DepartamentoCreate, DepartamentoRead, DepartamentoUpdate, PaginatedResponse
+from src.schemas.paginacao import PaginacaoQuery
 from src.services.departamento import (
     listar_departamento,
     obter_departamento,
@@ -18,14 +19,13 @@ router = APIRouter(prefix="/departamentos", tags=["Departamentos"])
 
 @router.get("/", response_model=PaginatedResponse[DepartamentoRead])
 def listar(
-    page: int = Query(1, ge=1, description="Número da página"),
-    size: int = Query(30, ge=1, le=100, description="Tamanho da página"),
+    paginacao: PaginacaoQuery,
     db: Session = Depends(get_db),
 ):
-    items, total = listar_departamento(db, page=page, size=size)
-    pages = (total + size - 1) // size
+    items, total = listar_departamento(db, page=paginacao.page, size=paginacao.size)
+    pages = (total + paginacao.size - 1) // paginacao.size
     return PaginatedResponse(
-        items=items, total=total, page=page, size=size, pages=pages
+        items=items, total=total, page=paginacao.page, size=paginacao.size, pages=pages
     )
 
 

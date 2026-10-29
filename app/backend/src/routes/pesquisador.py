@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.core.database import get_db
 from src.schemas import PaginatedResponse, PesquisadorCreate, PesquisadorRead, PesquisadorUpdate
+from src.schemas.paginacao import PaginacaoQuery
 from src.services.pesquisador import (
     listar_pesquisador,
     obter_pesquisador,
@@ -18,15 +19,20 @@ router = APIRouter(prefix="/pesquisadores", tags=["Pesquisadores"])
 
 @router.get("/", response_model=PaginatedResponse[PesquisadorRead])
 def listar(
-    page: int = Query(1, ge=1, description="Número da página"),
-    size: int = Query(30, ge=1, le=100, description="Tamanho da página"),
+    paginacao: PaginacaoQuery,
     termo: str | None = Query(None, max_length=150, description="Nome, Lattes ou cidade"),
     db: Session = Depends(get_db),
 ):
-    items, total = listar_pesquisador(db, page=page, size=size, termo=termo)
-    pages = (total + size - 1) // size
+    items, total = listar_pesquisador(
+        db, page=paginacao.page, size=paginacao.size, termo=termo
+    )
+    pages = (total + paginacao.size - 1) // paginacao.size
     return PaginatedResponse(
-        items=items, total=total, page=page, size=size, pages=pages
+        items=items,
+        total=total,
+        page=paginacao.page,
+        size=paginacao.size,
+        pages=pages,
     )
 
 

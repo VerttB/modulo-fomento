@@ -29,13 +29,11 @@ def listar_pesquisador(
     conditions = []
     if termo and termo.strip():
         pattern = f"%{termo.strip()}%"
-        conditions.append(
-            or_(
-                Pesquisador.nome.ilike(pattern),
-                Pesquisador.lattes.ilike(pattern),
-                Pesquisador.cidade.ilike(pattern),
-            )
-        )
+        conditions.append(or_(
+            Pesquisador.nome.ilike(pattern),
+            Pesquisador.lattes.ilike(pattern),
+            Pesquisador.cidade.ilike(pattern),
+        ))
     cep_ultima_bolsa = (
         select(Bolsa.cep_referencia)
         .where(

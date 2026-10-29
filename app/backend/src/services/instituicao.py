@@ -30,9 +30,7 @@ def listar_instituicao(
     query = select(Instituicao).order_by(Instituicao.id)
     if termo and termo.strip():
         pattern = f"%{termo.strip()}%"
-        query = query.where(
-            or_(Instituicao.nome.ilike(pattern), Instituicao.sigla.ilike(pattern))
-        )
+        query = query.where(or_(Instituicao.nome.ilike(pattern), Instituicao.sigla.ilike(pattern)))
     return _paginar(db, query, page, size)
 
 

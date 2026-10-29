@@ -40,7 +40,7 @@ def _paginar(db: Session, query, page: int, size: int):
 def _construir_consulta_bolsas(
     area: str | list[str] | None = None,
     grande_area: str | list[str] | None = None,
-    universidade: str | list[str] | None = None,
+    instituicao: str | list[str] | None = None,
     cidade: str | list[str] | None = None,
     territorio_identidade: str | list[str] | None = None,
     modalidade: str | list[str] | None = None,
@@ -70,6 +70,7 @@ def _construir_consulta_bolsas(
         selected = aliased(AreaConhecimento)
         parent = aliased(AreaConhecimento)
         root = aliased(AreaConhecimento)
+        pattern = f"%{termo.strip()}%"
         query = (
             query.join(Projeto, Bolsa.projeto_id == Projeto.id)
             .outerjoin(selected, Projeto.area_conhecimento_id == selected.id)
@@ -111,14 +112,14 @@ def _construir_consulta_bolsas(
         if large_area_conditions:
             query = query.where(or_(*large_area_conditions))
     
-    university_values = _selected_values(universidade)
-    if university_values:
+    institution_values = _selected_values(instituicao)
+    if institution_values:
         query = query.join(Instituicao, Bolsa.instituicao_id == Instituicao.id)
         query = query.where(
             or_(
                 *(
                     or_(Instituicao.nome.ilike(value), Instituicao.sigla.ilike(value))
-                    for value in university_values
+                    for value in institution_values
                 )
             )
         )
@@ -151,7 +152,6 @@ def _construir_consulta_bolsas(
         )
 
     if termo and termo.strip():
-        pattern = f"%{termo.strip()}%"
         researcher_search = aliased(Pesquisador)
         project_search = aliased(Projeto)
         institution_search = aliased(Instituicao)
@@ -167,20 +167,18 @@ def _construir_consulta_bolsas(
                 area_search,
                 project_search.area_conhecimento_id == area_search.id,
             )
-            .where(
-                or_(
-                    Bolsa.modalidade.ilike(pattern),
-                    Bolsa.nome_curso.ilike(pattern),
-                    researcher_search.nome.ilike(pattern),
-                    researcher_search.lattes.ilike(pattern),
-                    researcher_search.cidade.ilike(pattern),
-                    project_search.nome.ilike(pattern),
-                    project_search.resumo.ilike(pattern),
-                    institution_search.nome.ilike(pattern),
-                    institution_search.sigla.ilike(pattern),
-                    area_search.termo.ilike(pattern),
-                )
-            )
+            .where(or_(
+                Bolsa.modalidade.ilike(pattern),
+                Bolsa.nome_curso.ilike(pattern),
+                researcher_search.nome.ilike(pattern),
+                researcher_search.lattes.ilike(pattern),
+                researcher_search.cidade.ilike(pattern),
+                project_search.nome.ilike(pattern),
+                project_search.resumo.ilike(pattern),
+                institution_search.nome.ilike(pattern),
+                institution_search.sigla.ilike(pattern),
+                area_search.termo.ilike(pattern),
+            ))
         )
 
     return query.order_by(Bolsa.id)
@@ -192,7 +190,7 @@ def listar_bolsa(
     size: int = DEFAULT_PAGE_SIZE,
     area: str | list[str] | None = None,
     grande_area: str | list[str] | None = None,
-    universidade: str | list[str] | None = None,
+    instituicao: str | list[str] | None = None,
     cidade: str | list[str] | None = None,
     territorio_identidade: str | list[str] | None = None,
     modalidade: str | list[str] | None = None,
@@ -205,7 +203,7 @@ def listar_bolsa(
     query = _construir_consulta_bolsas(
         area=area,
         grande_area=grande_area,
-        universidade=universidade,
+        instituicao=instituicao,
         cidade=cidade,
         territorio_identidade=territorio_identidade,
         modalidade=modalidade,
@@ -223,7 +221,7 @@ def iterar_bolsas_exportacao(
     *,
     area: str | list[str] | None = None,
     grande_area: str | list[str] | None = None,
-    universidade: str | list[str] | None = None,
+    instituicao: str | list[str] | None = None,
     cidade: str | list[str] | None = None,
     territorio_identidade: str | list[str] | None = None,
     modalidade: str | list[str] | None = None,
@@ -234,7 +232,7 @@ def iterar_bolsas_exportacao(
     query = _construir_consulta_bolsas(
         area=area,
         grande_area=grande_area,
-        universidade=universidade,
+        instituicao=instituicao,
         cidade=cidade,
         territorio_identidade=territorio_identidade,
         modalidade=modalidade,

@@ -1,15 +1,19 @@
 import csv
 import io
+import tempfile
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
+from openpyxl import Workbook
 from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.database import get_db
 from src.core.enums import BolsaStatus
 from src.schemas import BolsaCreate, BolsaRead, BolsaUpdate, PaginatedResponse, EstatisticasBolsas
+from src.schemas.bolsa import BolsaFiltros, filtros_bolsa_query
 from src.services.bolsa import (
     listar_bolsa,
     obter_bolsa,
@@ -28,118 +32,132 @@ from src.services.territory_csv import load_city_territories
 from src.services.ingest_reader import normalizar
 
 router = APIRouter(prefix="/bolsas", tags=["Bolsas"])
+XLSX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
-@router.get("/exportar-resumo", response_class=StreamingResponse)
-def exportar_resumo(
-    area: list[str] | None = Query(None),
-    grande_area: list[str] | None = Query(None),
-    universidade: list[str] | None = Query(None),
-    cidade: list[str] | None = Query(None),
-    territorio_identidade: list[str] | None = Query(None),
-    modalidade: list[str] | None = Query(None),
-    ano_inicio: int | None = Query(None, ge=1900, le=2100),
-    ano_fim: int | None = Query(None, ge=1900, le=2100),
-    db: Session = Depends(get_db),
-):
-    report = relatorio_bolsas(
-        db,
-        ano_inicio=ano_inicio,
-        ano_fim=ano_fim,
-        modalidade=modalidade,
-        cidade=cidade,
-        instituicao=universidade,
-        area=area,
-        grande_area=grande_area,
-        territorio_identidade=territorio_identidade,
-    )
-    city_territories = load_city_territories(settings.territorios_csv_path)
-    rows = []
-    for item in report["por_territorio_identidade"]:
-        rows.append(["Território", item["territorio_identidade"], "", "", item["total"]])
-    for item in report["por_cidade"]:
-        territory = city_territories.get(normalizar(item["cidade"] or ""), "")
-        rows.append(["Cidade", territory, item["cidade"], "", item["total"]])
-    for item in report["por_instituicao"]:
-        university = (
-            f"{item['sigla']} — {item['nome']}"
-            if item["sigla"] and item["nome"]
-            else item["sigla"] or item["nome"] or ""
+def _export_value(value):
+    if isinstance(value, UUID):
+        return str(value)
+    if not isinstance(value, str):
+        return value
+    sanitized = sanitizar_texto_livre(value)
+    return f"'{sanitized}" if sanitized.startswith(("=", "+", "-", "@")) else sanitized
+
+
+def _spreadsheet_response(headers, rows, filename: str, request: Request):
+    accept = request.headers.get("accept", "*/*").casefold()
+    if XLSX_MEDIA_TYPE in accept:
+        def xlsx_stream():
+            with tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024) as stream:
+                workbook = Workbook(write_only=True)
+                sheet = workbook.create_sheet("Bolsistas")
+                sheet.append(headers)
+                for row in rows:
+                    sheet.append([_export_value(value) for value in row])
+                workbook.save(stream)
+                stream.seek(0)
+                while chunk := stream.read(1024 * 1024):
+                    yield chunk
+
+        return StreamingResponse(
+            xlsx_stream(),
+            media_type=XLSX_MEDIA_TYPE,
+            headers={"Content-Disposition": f'attachment; filename="{filename}.xlsx"'},
         )
-        rows.append(["Universidade", "", "", university, item["total"]])
+
+    if "text/csv" not in accept and "*/*" not in accept:
+        raise HTTPException(status_code=406, detail="Formato não aceito. Use CSV ou XLSX.")
 
     def csv_stream():
         buffer = io.StringIO(newline="")
         writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
-        writer.writerow(
-            ["Recorte", "Território de identidade", "Cidade", "Universidade", "Quantidade de registros de bolsistas"]
-        )
+        writer.writerow(headers)
         yield "\ufeff" + buffer.getvalue()
         for row in rows:
             buffer.seek(0)
             buffer.truncate(0)
-            writer.writerow(
-                [
-                    f"'{sanitizar_texto_livre(value)}"
-                    if isinstance(value, str) and value.startswith(("=", "+", "-", "@"))
-                    else sanitizar_texto_livre(value)
-                    if isinstance(value, str)
-                    else value
-                    for value in row
-                ]
-            )
+            writer.writerow([_export_value(value) for value in row])
             yield buffer.getvalue()
 
     return StreamingResponse(
         csv_stream(),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="resumo-bolsistas-fapesb.csv"'},
+        headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'},
+    )
+
+
+@router.get("/exportar-resumo", response_class=StreamingResponse)
+def exportar_resumo(
+    request: Request,
+    filtros: Annotated[BolsaFiltros, Depends(filtros_bolsa_query)],
+    recorte: list[Literal["territorio", "cidade", "instituicao"]] | None = Query(None),
+    db: Session = Depends(get_db),
+):
+    report = relatorio_bolsas(db, **filtros.model_dump())
+    city_territories = load_city_territories(settings.territorios_csv_path)
+    selected_dimensions = set(recorte or ["territorio", "cidade", "instituicao"])
+    rows = []
+    if "territorio" in selected_dimensions:
+        for item in report["por_territorio_identidade"]:
+            rows.append(["Território", item["territorio_identidade"], "", "", item["total"]])
+    if "cidade" in selected_dimensions:
+        for item in report["por_cidade"]:
+            territory = city_territories.get(normalizar(item["cidade"] or ""), "")
+            rows.append(["Cidade", territory, item["cidade"], "", item["total"]])
+    if "instituicao" in selected_dimensions:
+        for item in report["por_instituicao"]:
+            institution_name = (
+                f"{item['sigla']} — {item['nome']}"
+                if item["sigla"] and item["nome"]
+                else item["sigla"] or item["nome"] or ""
+            )
+            rows.append(["Instituição", "", "", institution_name, item["total"]])
+
+    suffix = "todos" if len(selected_dimensions) == 3 else "-".join(
+        dimension for dimension in ("territorio", "cidade", "instituicao")
+        if dimension in selected_dimensions
+    )
+    return _spreadsheet_response(
+        ["Recorte", "Território de identidade", "Cidade", "Instituição", "Quantidade de registros de bolsistas"],
+        rows,
+        f"resumo-{suffix}-bolsistas-fapesb",
+        request,
     )
 
 
 @router.get("/", response_model=PaginatedResponse[BolsaRead])
 def listar(
-    page: int = Query(1, ge=1, description="Número da página"),
-    size: int = Query(30, ge=1, le=100, description="Tamanho da página"),
-    area: list[str] | None = Query(None, description="Filtrar por uma ou mais áreas"),
-    grande_area: list[str] | None = Query(None, description="Filtrar por uma ou mais grandes áreas"),
-    universidade: list[str] | None = Query(None, description="Filtrar por uma ou mais instituições"),
-    cidade: list[str] | None = Query(None, description="Filtrar por um ou mais municípios do pesquisador"),
-    territorio_identidade: list[str] | None = Query(None, description="Filtrar por um ou mais territórios de identidade"),
-    modalidade: list[str] | None = Query(None, description="Filtrar por uma ou mais modalidades"),
-    ano_inicio: int | None = Query(None, ge=1900, le=2100, description="Ano de início (mínimo)"),
-    ano_fim: int | None = Query(None, ge=1900, le=2100, description="Ano de fim (máximo)"),
+    filtros: Annotated[BolsaFiltros, Depends(filtros_bolsa_query)],
+    page: int = Query(1, ge=1),
+    size: int = Query(30, ge=1, le=100),
     status: BolsaStatus | None = Query(None, description="Filtrar pelo status da bolsa"),
     incluir_conflitos: bool = Query(False, description="Incluir bolsas em revisão de conflito"),
     termo: str | None = Query(None, max_length=150, description="Busca em pessoas, projetos, instituição e curso"),
     db: Session = Depends(get_db),
 ):
     items, total = listar_bolsa(
-        db, page=page, size=size,
-        area=area, grande_area=grande_area,
-        universidade=universidade, cidade=cidade,
-        territorio_identidade=territorio_identidade,
-        modalidade=modalidade, ano_inicio=ano_inicio, ano_fim=ano_fim,
+        db,
+        page=page,
+        size=size,
+        **filtros.model_dump(),
         status=status,
         incluir_conflitos=incluir_conflitos,
         termo=termo,
     )
     pages = (total + size - 1) // size
     return PaginatedResponse(
-        items=items, total=total, page=page, size=size, pages=pages
+        items=items,
+        total=total,
+        page=page,
+        size=size,
+        pages=pages,
     )
 
 
 @router.get("/exportar", response_class=StreamingResponse)
 def exportar(
-    area: list[str] | None = Query(None),
-    grande_area: list[str] | None = Query(None),
-    universidade: list[str] | None = Query(None),
-    cidade: list[str] | None = Query(None),
-    territorio_identidade: list[str] | None = Query(None),
-    modalidade: list[str] | None = Query(None),
-    ano_inicio: int | None = Query(None, ge=1900, le=2100),
-    ano_fim: int | None = Query(None, ge=1900, le=2100),
+    request: Request,
+    filtros: Annotated[BolsaFiltros, Depends(filtros_bolsa_query)],
     termo: str | None = Query(None, max_length=150),
     db: Session = Depends(get_db),
 ):
@@ -154,24 +172,10 @@ def exportar(
         "Status", "Em conflito", "Linha de origem", "Ingestão ID",
     ]
 
-    def csv_stream():
-        buffer = io.StringIO(newline="")
-        writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
-        writer.writerow(headers)
-        yield "\ufeff" + buffer.getvalue()
-        buffer.seek(0)
-        buffer.truncate(0)
-
+    def spreadsheet_rows():
         for scholarship in iterar_bolsas_exportacao(
             db,
-            area=area,
-            grande_area=grande_area,
-            universidade=universidade,
-            cidade=cidade,
-            territorio_identidade=territorio_identidade,
-            modalidade=modalidade,
-            ano_inicio=ano_inicio,
-            ano_fim=ano_fim,
+            **filtros.model_dump(),
             termo=termo,
         ):
             researcher = scholarship.pesquisador
@@ -230,49 +234,15 @@ def exportar(
                 scholarship.linha_origem,
                 scholarship.ingestao_id,
             ]
-            writer.writerow(
-                [
-                    f"'{sanitizar_texto_livre(value)}"
-                    if isinstance(value, str)
-                    and value.startswith(("=", "+", "-", "@"))
-                    else sanitizar_texto_livre(value)
-                    if isinstance(value, str)
-                    else value
-                    for value in row
-                ]
-            )
-            yield buffer.getvalue()
-            buffer.seek(0)
-            buffer.truncate(0)
+            yield row
 
-    return StreamingResponse(
-        csv_stream(),
-        media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="bolsistas-fapesb.csv"'},
-    )
+    return _spreadsheet_response(headers, spreadsheet_rows(), "bolsistas-fapesb", request)
 @router.get("/estatisticas", response_model=EstatisticasBolsas)
 def estatisticas(
-    ano_inicio: int | None = Query(None, ge=1900, le=2100),
-    ano_fim: int | None = Query(None, ge=1900, le=2100),
-    modalidade: list[str] | None = Query(None),
-    cidade: list[str] | None = Query(None),
-    instituicao: list[str] | None = Query(None),
-    area: list[str] | None = Query(None),
-    grande_area: list[str] | None = Query(None),
-    territorio_identidade: list[str] | None = Query(None),
+    filtros: Annotated[BolsaFiltros, Depends(filtros_bolsa_query)],
     db: Session = Depends(get_db),
 ):
-    return relatorio_bolsas(
-        db,
-        ano_inicio=ano_inicio,
-        ano_fim=ano_fim,
-        modalidade=modalidade,
-        cidade=cidade,
-        instituicao=instituicao,
-        area=area,
-        grande_area=grande_area,
-        territorio_identidade=territorio_identidade,
-    )
+    return relatorio_bolsas(db, **filtros.model_dump())
 
 
 @router.get("/{resource_id}", response_model=BolsaRead)

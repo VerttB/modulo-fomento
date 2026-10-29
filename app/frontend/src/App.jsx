@@ -6,6 +6,7 @@ import { getProjectsPage } from "./services/projetos";
 import { getInstitutionsPage } from "./services/instituicoes";
 import { getCities, synchronizeResearcherTerritories } from "./services/territorios";
 import FiltersPanel from "./componentes/filtros/FiltersPanel.jsx";
+import SummaryExportMenu from "./componentes/exportacao/SummaryExportMenu.jsx";
 import IngestionsPanel from "./componentes/ingestoes/IngestionsPanel.jsx";
 import EmptyState from "./componentes/ui/EmptyState.jsx";
 import DirectoryPage from "./pages/DirectoryPage.jsx";
@@ -48,6 +49,7 @@ export default function App() {
   const [listError, setListError] = useState("");
   const [exporting, setExporting] = useState(false);
   const [summaryExporting, setSummaryExporting] = useState(false);
+  const [exportFormat, setExportFormat] = useState("csv");
   const [exportError, setExportError] = useState("");
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
@@ -147,31 +149,33 @@ export default function App() {
     setExporting(true);
     setExportError("");
     try {
-      const blob = await exportScholarships(filters, view === "bolsas" ? searchTerm : "");
+      const blob = await exportScholarships(filters, view === "bolsas" ? searchTerm : "", exportFormat);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "bolsistas-fapesb.csv";
+      link.download = `bolsistas-fapesb.${exportFormat}`;
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (cause) { setExportError(getErrorMessage(cause)); }
     finally { setExporting(false); }
-  }, [filters, searchTerm, view]);
+  }, [exportFormat, filters, searchTerm, view]);
 
-  const exportSummary = useCallback(async () => {
+  const exportSummary = useCallback(async (dimensions) => {
     setSummaryExporting(true);
     setExportError("");
     try {
-      const blob = await exportScholarshipSummary(filters);
+      const blob = await exportScholarshipSummary(filters, dimensions, exportFormat);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "resumo-bolsistas-fapesb.csv";
+      const suffix = dimensions.length === 3 ? "todos" : dimensions.join("-");
+      link.download = `resumo-${suffix}-bolsistas-fapesb.${exportFormat}`;
       link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (cause) { setExportError(getErrorMessage(cause)); }
+      return true;
+    } catch (cause) { setExportError(getErrorMessage(cause)); return false; }
     finally { setSummaryExporting(false); }
-  }, [filters]);
+  }, [exportFormat, filters]);
 
   const synchronizeTerritories = useCallback(async () => {
     setSyncingTerritories(true);
@@ -252,9 +256,9 @@ export default function App() {
       <main className="main-area">
         <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav((open) => !open)} aria-label="Abrir menu">☰</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>
         <div className="page-content">
-          <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Explore os dados" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><button className="export-button" disabled={!canExport || exporting} onClick={exportResults}><span>↓</span> {exporting ? "Preparando…" : "Exportar registros"}</button><button className="export-button export-summary-button" disabled={!canExport || summaryExporting} onClick={exportSummary}><span>▦</span> {summaryExporting ? "Preparando…" : "Exportar resumo"}</button></div>}</div>
+          <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Explore os dados" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><label className="export-format"><span>Formato</span><select value={exportFormat} onChange={(event) => setExportFormat(event.target.value)} aria-label="Formato da exportação"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option></select></label><button className="export-button" disabled={!canExport || exporting} aria-busy={exporting} onClick={exportResults}>{exporting ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span>↓</span> Exportar registros</>}</button><SummaryExportMenu disabled={!canExport} loading={summaryExporting} format={exportFormat} onExport={exportSummary} /></div>}</div>
           {directoryViews.includes(view) && <form className="search-toolbar" onSubmit={(event) => { event.preventDefault(); setListPage(1); setSearchTerm(searchDraft.trim()); }}>
-            <span aria-hidden="true">⌕</span><input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={view === "bolsas" ? "Buscar pessoa, projeto, instituição, modalidade ou cidade…" : view === "instituicoes" ? "Buscar instituição por nome ou sigla…" : view === "pesquisadores" ? "Buscar por nome, cidade ou Lattes…" : "Buscar por título, resumo ou área…"} aria-label="Buscar registros" />
+          <span aria-hidden="true">⌕</span><input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={view === "projetos" ? 'Buscar título, resumo ou área… (AND, OR, NOT)' : view === "bolsas" ? "Buscar pessoa, projeto, instituição, modalidade ou cidade…" : view === "instituicoes" ? "Buscar instituição por nome ou sigla…" : "Buscar por nome, cidade ou Lattes…"} aria-label="Buscar registros" />
             <button type="submit">Buscar</button>{(searchTerm || searchDraft) && <button type="button" className="search-clear" onClick={() => { setSearchDraft(""); setSearchTerm(""); setListPage(1); }}>Limpar</button>}
           </form>}
           {(reportViews.includes(view) || view === "bolsas") && <FiltersPanel filters={filters} choices={{ ...choices, cityRows: baseReport?.por_cidade || [] }} onChange={setFilter} onReset={resetFilters} />}

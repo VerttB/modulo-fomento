@@ -22,6 +22,9 @@ async function request(path: string, options: RequestInit = {}): Promise<Respons
     try {
       const body = (await response.json()) as ApiErrorBody;
       if (typeof body.detail === "string") detail = body.detail;
+      else if (Array.isArray(body.detail)) {
+        detail = body.detail.map((item) => item.msg).filter(Boolean).join(" ") || detail;
+      }
     } catch {
       // Mantém uma mensagem simples se a resposta não tiver JSON.
     }

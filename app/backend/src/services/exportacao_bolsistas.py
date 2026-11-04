@@ -80,14 +80,15 @@ def _safe_value(value):
         return value.isoformat()
     if isinstance(value, str):
         sanitized = sanitizar_texto_livre(value)
-        return f"'{sanitized}" if sanitized.startswith(("=", "+", "-", "@")) else sanitized
+        dangerous = sanitized.startswith(("\t", "\r", "\n")) or sanitized.lstrip().startswith(("=", "+", "-", "@"))
+        return f"'{sanitized}" if dangerous else sanitized
     return value
 
 
 def _csv_rows(headers: list[str], rows: Iterable[list]):
     buffer = io.StringIO(newline="")
     writer = csv.writer(buffer, delimiter=";", lineterminator="\r\n")
-    writer.writerow(headers)
+    writer.writerow([_safe_value(value) for value in headers])
     yield "\ufeff" + buffer.getvalue()
     for row in rows:
         buffer.seek(0)
@@ -100,7 +101,7 @@ def _xlsx_rows(headers: list[str], rows: Iterable[list]):
     with tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024) as stream:
         workbook = Workbook(write_only=True)
         sheet = workbook.create_sheet("Bolsistas")
-        sheet.append(headers)
+        sheet.append([_safe_value(value) for value in headers])
         for row in rows:
             sheet.append([_safe_value(value) for value in row])
         workbook.save(stream)
@@ -109,13 +110,23 @@ def _xlsx_rows(headers: list[str], rows: Iterable[list]):
             yield chunk
 
 
+def _sanitizar_json(value):
+    if isinstance(value, str):
+        return sanitizar_texto_livre(value)
+    if isinstance(value, dict):
+        return {_sanitizar_json(key): _sanitizar_json(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_sanitizar_json(item) for item in value]
+    return value
+
+
 def _json_array(rows: Iterable[dict]):
     yield "["
     first = True
     for row in rows:
         if not first:
             yield ","
-        yield json.dumps(row, ensure_ascii=False, default=str)
+        yield json.dumps(_sanitizar_json(row), ensure_ascii=False, default=str)
         first = False
     yield "]"
 
@@ -157,7 +168,7 @@ def exportar_resumo_bolsistas(
     selected = list(dict.fromkeys(recortes or ALL_RECORTES))
     report = relatorio_bolsistas_por_recortes(db, filtros, selected)
     if formato == "json":
-        content = (json.dumps(report, ensure_ascii=False, default=str),)
+        content = (json.dumps(_sanitizar_json(report), ensure_ascii=False, default=str),)
     else:
         modalities = list(report["por_modalidade"])
         headers = [

@@ -14,6 +14,7 @@ from src.use_cases.v1.ingest.rows import PreparedRow
 
 
 logger = logging.getLogger(__name__)
+MAX_FALHAS_EXTERNAS_CONSECUTIVAS = 5
 
 
 def identify_researchers(
@@ -63,9 +64,12 @@ def identify_with_checkpoints(
     cpfs = sorted(rows_by_cpf)
     total = len(cpfs)
     complete = 0
+    consecutive_failures = 0
     client = httpx.Client(timeout=settings.external_api_timeout_seconds)
     try:
         for position, cpf in enumerate(cpfs, start=1):
+            lookup_attempted = False
+            lookup_failed = False
             person_rows = rows_by_cpf[cpf]
             person_checkpoints = [checkpoints[item[0]] for item in person_rows]
             saved = next(
@@ -92,6 +96,7 @@ def identify_with_checkpoints(
                         city = persisted_researcher.cidade
                         territory = city_territories.get(normalizar(city or ""))
                     elif saved.lattes_id:
+                        lookup_attempted = True
                         name, city, territory = consultar_perfil_por_lattes(
                             client, saved.lattes_id
                         )
@@ -101,9 +106,11 @@ def identify_with_checkpoints(
                     identifications[cpf] = (saved.lattes_id, name, city, territory)
                     complete += 1
                 except ExternalLookupError as error:
+                    lookup_failed = True
                     errors.append(str(error))
             else:
                 try:
+                    lookup_attempted = True
                     lattes, name, city, territory = consultar_pesquisador(client, cpf)
                     territory = city_territories.get(normalizar(city or ""))
                     identifications[cpf] = (lattes, name, city, territory)
@@ -113,6 +120,7 @@ def identify_with_checkpoints(
                         checkpoint.erro = None
                     complete += 1
                 except ExternalLookupError:
+                    lookup_failed = True
                     source_lines = sorted(item[0] for item in person_rows)
                     message = "Falha na consulta externa para as linhas do arquivo: " + ", ".join(
                         str(line) for line in source_lines
@@ -130,6 +138,13 @@ def identify_with_checkpoints(
 
             ingestao.pesquisadores_total = total
             ingestao.pesquisadores_consultados = complete
+            if lookup_attempted:
+                consecutive_failures = consecutive_failures + 1 if lookup_failed else 0
+            if consecutive_failures >= MAX_FALHAS_EXTERNAS_CONSECUTIVAS:
+                db.commit()
+                raise ExternalLookupError(
+                    "Serviço de identificação indisponível após falhas consecutivas; retome a ingestão quando estiver disponível."
+                )
             if position % settings.ingest_checkpoint_interval == 0 or position == total:
                 db.commit()
                 logger.info(

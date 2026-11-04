@@ -9,6 +9,9 @@ from src.core.exceptions import ApplicationError
 from src.routes import router
 
 logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
+# Os serviços externos recebem CPF na URL; seus logs não devem registrar requisições.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 app = FastAPI(
     title="Módulo de Fomento",

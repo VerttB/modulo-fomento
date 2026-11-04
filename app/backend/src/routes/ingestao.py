@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -26,10 +26,17 @@ from src.services.ingestao import (
     resumo_ingestao,
 )
 from src.use_cases.v1.ingest.execute import retomar_ingestao
+from src.use_cases.v1.ingest.fila import processar_proxima_ingestao
 from src.use_cases.v1.ingest.rebuild_trace import reconstruir_rastreabilidade
 
 
 router = APIRouter(prefix="/ingestoes", tags=["Ingestões"])
+
+
+@router.post("/processar-proxima", status_code=204, response_class=Response)
+def processar_proxima(db: Session = Depends(get_db)):
+    processar_proxima_ingestao(db)
+    return Response(status_code=204)
 
 
 @router.get("/", response_model=PaginatedResponse[IngestaoRead])

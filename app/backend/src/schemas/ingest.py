@@ -2,6 +2,11 @@ from pydantic import BaseModel, Field
 from uuid import UUID
 
 
+class IngestaoRecebida(BaseModel):
+    ingestao_id: UUID
+    status: str = "PROCESSANDO"
+
+
 class IngestResponse(BaseModel):
     ingestao_id: UUID
     linhas_processadas: int

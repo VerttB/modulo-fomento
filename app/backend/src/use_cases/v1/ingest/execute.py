@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import BinaryIO
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from src.core.enums import IngestaoLinhaStatus, IngestaoStatus
-from src.core.exceptions import IngestFormatError, ResourceNotFoundError
+from src.core.exceptions import ExternalLookupError, IngestFormatError, IngestaoEmAndamentoError, ResourceNotFoundError
 from src.models import Bolsa, Ingestao, IngestaoExecucao, IngestaoLinha, IngestaoLinhaEvento
 from src.schemas.ingest import IngestResponse
 from src.services.ingest_files import (
@@ -18,6 +18,7 @@ from src.services.ingest_files import (
     salvar_upload,
 )
 from src.services.ingestao import travar_ingestao
+from src.services.privacidade import sanitizar_texto_livre
 from src.use_cases.v1.ingest.identification import identify_researchers as _identify_researchers
 from src.use_cases.v1.ingest.pipeline import (
     _refresh_metrics_after_persistence,
@@ -28,13 +29,26 @@ from src.use_cases.v1.ingest.pipeline import (
 logger = logging.getLogger(__name__)
 
 
-def retomar_ingestao(db: Session, ingestao_id: UUID) -> IngestResponse:
+def retomar_ingestao(db: Session, ingestao_id: UUID, *, somente_processando: bool = False) -> IngestResponse:
     with travar_ingestao(db.get_bind(), ingestao_id):
+        db.expire_all()
         ingestao = db.get(Ingestao, ingestao_id)
         if ingestao is None:
             raise ResourceNotFoundError("Ingestão não encontrada.")
+        if somente_processando and ingestao.status != IngestaoStatus.PROCESSANDO:
+            raise IngestaoEmAndamentoError("Ingestão não está mais disponível para processamento.")
         if ingestao.status == IngestaoStatus.CONCLUIDA:
             raise IngestFormatError("Esta ingestão já foi concluída.")
+        interrupted = db.scalars(
+            select(IngestaoExecucao).where(
+                IngestaoExecucao.ingestao_id == ingestao.id,
+                IngestaoExecucao.status == IngestaoStatus.PROCESSANDO,
+            )
+        ).all()
+        for previous in interrupted:
+            previous.status = IngestaoStatus.FALHA
+            previous.finalizada_em = datetime.now(timezone.utc)
+            previous.erro = "Execução interrompida; retomada a partir dos lotes confirmados."
         previous_attempts = db.scalar(
             select(func.max(IngestaoExecucao.numero)).where(
                 IngestaoExecucao.ingestao_id == ingestao.id
@@ -51,6 +65,7 @@ def retomar_ingestao(db: Session, ingestao_id: UUID) -> IngestResponse:
         db.commit()
         db.refresh(execution)
         started = time.perf_counter()
+        logger.info("Ingestão %s: tentativa %s iniciada; lendo arquivo e preparando checkpoints", ingestao.id, execution.numero)
         try:
             response = run_ingestion(db, ingestao, execution)
             logger.info(
@@ -69,7 +84,11 @@ def retomar_ingestao(db: Session, ingestao_id: UUID) -> IngestResponse:
             if failed_execution is not None:
                 failed_execution.status = IngestaoStatus.FALHA
                 failed_execution.finalizada_em = datetime.now(timezone.utc)
-                failure_message = f"Falha durante o processamento ({type(error).__name__})."
+                failure_message = (
+                    "Serviço externo de identificação indisponível; retome a ingestão quando estiver disponível."
+                    if isinstance(error, ExternalLookupError)
+                    else f"Falha durante o processamento ({type(error).__name__})."
+                )
                 failed_execution.erro = failure_message
                 checkpoints = db.scalars(
                     select(IngestaoLinha).where(IngestaoLinha.ingestao_id == ingestao_id)
@@ -87,11 +106,9 @@ def retomar_ingestao(db: Session, ingestao_id: UUID) -> IngestResponse:
                             if checkpoint.status == IngestaoLinhaStatus.INSERIDA_CONFLITO
                             else None
                         )
-                    elif checkpoint.status in (
-                        IngestaoLinhaStatus.PENDENTE,
-                        IngestaoLinhaStatus.ERRO,
-                    ):
-                        checkpoint.status = IngestaoLinhaStatus.ERRO
+                    elif checkpoint.status == IngestaoLinhaStatus.PENDENTE:
+                        checkpoint.motivo = "Não processada; aguardando retomada da ingestão."
+                    elif checkpoint.status == IngestaoLinhaStatus.ERRO and not checkpoint.motivo:
                         checkpoint.motivo = failure_message
                     db.add(
                         IngestaoLinhaEvento(
@@ -106,15 +123,15 @@ def retomar_ingestao(db: Session, ingestao_id: UUID) -> IngestResponse:
                     )
                 db.commit()
             _refresh_metrics_after_persistence(db, [])
-            logger.exception("Falha no lote de ingestão %s", ingestao_id)
+            logger.error("Falha no lote de ingestão %s (%s)", ingestao_id, type(error).__name__)
             raise
 
 
-def ingest_v1(
+def registrar_ingestao(
     db: Session, filename: str, content: bytes | BinaryIO
-) -> IngestResponse:
+) -> UUID:
     started = time.perf_counter()
-    safe_filename = nome_arquivo_seguro(filename)
+    safe_filename = sanitizar_texto_livre(nome_arquivo_seguro(filename))
     ingestao = Ingestao(
         nome_arquivo=safe_filename[:255],
         tipo=Path(safe_filename).suffix.casefold().lstrip(".")[:10] or "desconhecido",
@@ -131,6 +148,8 @@ def ingest_v1(
             stored_path, checksum = salvar_upload(ingestao.id, safe_filename, content)
         ingestao.arquivo_original_path = stored_path
         ingestao.arquivo_sha256 = checksum
+        ingestao.enfileirada = True
+        db.execute(text("SELECT pg_notify('ingestoes_pendentes', '')"))
         db.commit()
         logger.info(
             "Ingestão v1 iniciada: lote=%s arquivo=%s sha256=%s",
@@ -138,8 +157,8 @@ def ingest_v1(
             safe_filename,
             checksum,
         )
-        return retomar_ingestao(db, ingestao.id)
-    except Exception:
+        return ingestao.id
+    except Exception as error:
         db.rollback()
         failed = db.get(Ingestao, ingestao.id)
         if failed is not None:
@@ -161,9 +180,10 @@ def ingest_v1(
                     )
                 )
             db.commit()
-        logger.exception(
-            "Falha ao iniciar/processar ingestão %s em %.1fs",
+        logger.error(
+            "Falha ao registrar ingestão %s em %.1fs (%s)",
             ingestao.id,
             time.perf_counter() - started,
+            type(error).__name__,
         )
         raise

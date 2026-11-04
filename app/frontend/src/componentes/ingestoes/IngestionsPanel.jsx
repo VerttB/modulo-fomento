@@ -79,11 +79,11 @@ export default function IngestionsPanel({ onApiStateChange }) {
     if (!file) return;
     const form = event.currentTarget;
     setBusy(true); setError("");
-    setNotice("O envio e a ingestão podem levar alguns minutos; o processamento é salvo em lotes.");
+    setNotice("Enviando e armazenando o arquivo…");
     try {
       const result = await uploadIngestion(file);
-      setNotice(`Ingestão ${result.ingestao_id}: ${formatNumber(result.linhas_processadas)} linha(s) inserida(s), ${formatNumber(result.bolsas_conflitantes)} registro(s) de bolsistas em conflito.`);
-      setFile(null); form.reset(); setPage(1); setSelectedId(""); setState("loading");
+      setNotice(`Arquivo recebido. A ingestão ${result.ingestao_id} será processada em segundo plano.`);
+      setFile(null); form.reset(); setPage(1); setSelectedId(result.ingestao_id); setState("loading");
       setRevision((value) => value + 1);
     } catch (cause) { setError(getErrorMessage(cause)); setSelectedId(""); setState("loading"); setRevision((value) => value + 1); }
     finally { setBusy(false); }
@@ -130,7 +130,7 @@ export default function IngestionsPanel({ onApiStateChange }) {
         <label className="file-picker">{file ? file.name : "Selecione uma planilha CSV, XLS ou XLSX"}
           <input type="file" accept=".csv,.xls,.xlsx,.ods" onChange={(event) => setFile(event.target.files?.[0] || null)} />
         </label>
-        <button className="primary-button" type="submit" disabled={!file || busy}>{busy ? "Processando…" : "Enviar e processar"}</button>
+        <button className="primary-button" type="submit" disabled={!file || busy}>{busy ? "Enviando…" : "Enviar e processar"}</button>
       </form>
       <p className="privacy-note">O CPF não é gravado no banco. A cópia original permanece no armazenamento da aplicação para retomada.</p>
     </section>

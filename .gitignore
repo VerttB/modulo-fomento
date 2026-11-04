@@ -153,6 +153,7 @@ activemq-data/
 .venv
 .venv/
 app/backend/storage/
+data/observatorioBolsaCotas.xlsx
 node_modules/
 app/frontend/dist/
 app/frontend/node_modules/

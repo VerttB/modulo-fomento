@@ -42,3 +42,15 @@ class Config(BaseSettings):
 
 
 settings = Config()
+
+
+class HopDispatcherConfig(BaseSettings):
+    """Configuração exclusiva do disparador de containers Hop."""
+
+    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
+
+    hop_ingest_api_url: str = Field(min_length=1)
+    hop_job_image: str = Field(min_length=1)
+    hop_docker_socket: Path
+    hop_project_path: Path
+    hop_retry_delay_seconds: int = Field(gt=0)

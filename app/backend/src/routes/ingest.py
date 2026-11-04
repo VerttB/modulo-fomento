@@ -4,20 +4,20 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
 from src.core.database import get_db
-from src.schemas.ingest import IngestResponse
-from src.use_cases.v1.ingest.execute import ingest_v1
+from src.schemas.ingest import IngestaoRecebida
+from src.use_cases.v1.ingest.execute import registrar_ingestao
 
 router = APIRouter(tags=["Ingestão"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/ingest", response_model=IngestResponse, status_code=201)
+@router.post("/ingest", response_model=IngestaoRecebida, status_code=202)
 def ingest(
     arquivo: UploadFile = File(...),
     db: Session = Depends(get_db),
-) -> IngestResponse:
+) -> IngestaoRecebida:
     nome_arquivo = arquivo.filename or "arquivo-sem-nome"
-    logger.info("Rota de ingestão acionada: arquivo=%s", nome_arquivo)
-    response = ingest_v1(db, nome_arquivo, arquivo.file)
-    logger.info("Rota de ingestão concluída: arquivo=%s lote=%s", nome_arquivo, response.ingestao_id)
-    return response
+    logger.info("Rota de ingestão acionada")
+    ingestao_id = registrar_ingestao(db, nome_arquivo, arquivo.file)
+    logger.info("Arquivo recebido para ingestão: lote=%s", ingestao_id)
+    return IngestaoRecebida(ingestao_id=ingestao_id)

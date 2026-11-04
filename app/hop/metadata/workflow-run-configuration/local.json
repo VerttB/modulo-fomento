@@ -1,0 +1,6 @@
+{
+  "engineRunConfiguration": {"Local": {"safe_mode": false}},
+  "name": "local",
+  "description": "Execução local da prova de conceito",
+  "defaultSelection": true
+}

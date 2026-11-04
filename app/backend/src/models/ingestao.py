@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums import IngestaoStatus
@@ -19,6 +19,9 @@ class Ingestao(Base):
     arquivo_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     arquivo_original_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     arquivo_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    enfileirada: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     status: Mapped[IngestaoStatus] = mapped_column(
         Enum(
             IngestaoStatus,

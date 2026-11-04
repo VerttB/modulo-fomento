@@ -14,6 +14,7 @@ export interface Ingestao {
   quantidade_linhas: number;
   tipo: string;
   status: IngestaoStatus;
+  enfileirada: boolean;
   iniciada_em: string;
   finalizada_em: string | null;
   linhas_processadas: number;
@@ -95,4 +96,9 @@ export interface IngestResponse {
   bolsas_conflitantes: number;
   pesquisadores_consultados: number;
   erros: string[];
+}
+
+export interface IngestaoRecebida {
+  ingestao_id: string;
+  status: IngestaoStatus;
 }

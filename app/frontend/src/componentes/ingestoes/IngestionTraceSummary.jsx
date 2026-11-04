@@ -29,7 +29,7 @@ export default function IngestionTraceSummary({ source, summary, executions, loa
     : 0;
 
   return <div className="ingestion-trace-summary">
-    <PanelHeader title="Resumo da ingestão selecionada" subtitle={`${source.nome_arquivo} · iniciada em ${new Date(source.iniciada_em).toLocaleString("pt-BR")}${source.finalizada_em ? ` · finalizada em ${new Date(source.finalizada_em).toLocaleString("pt-BR")}` : " · em processamento"}`} />
+    <PanelHeader title="Resumo da ingestão selecionada" subtitle={`${source.nome_arquivo} · iniciada em ${new Date(source.iniciada_em).toLocaleString("pt-BR")}${source.finalizada_em ? ` · finalizada em ${new Date(source.finalizada_em).toLocaleString("pt-BR")}` : " · aguardando ou em processamento"}`} />
     <div className="trace-summary-grid">
       <div className="trace-summary-card"><span>Total no arquivo</span><strong>{formatNumber(source.quantidade_linhas)}</strong></div>
       {summaryItems.map(([key, label]) => <div className="trace-summary-card" key={key}><span>{label}</span><strong>{formatNumber(key === "DUPLICADA" ? duplicateCount : statusCounts[key] || 0)}</strong></div>)}

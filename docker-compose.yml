@@ -17,8 +17,9 @@ services:
 
   api:
     build: ./app/backend
+    image: modulo-fomento-api:local
     command: ["/app/.venv/bin/uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/src"]
-    environment:
+    environment: &backend_env
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       TERRITORIOS_CSV_PATH: ${TERRITORIOS_CSV_PATH:-/app/data/referencias/dim_territorio_identidade.csv}
       POPULACAO_MUNICIPIOS_CSV_PATH: ${POPULACAO_MUNICIPIOS_CSV_PATH:-/app/data/referencias/IBGE_Cidades_Bahia.csv}
@@ -42,6 +43,48 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  hop-image:
+    image: apache/hop:2.18.0
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["exit 0"]
+
+  hop-dispatcher:
+    build: ./app/backend
+    image: modulo-fomento-dispatcher:local
+    restart: unless-stopped
+    command: ["/app/.venv/bin/python", "-m", "src.commands.hop_dispatcher"]
+    environment:
+      <<: *backend_env
+      HOP_INGEST_API_URL: ${HOP_INGEST_API_URL:?Configure HOP_INGEST_API_URL no arquivo .env}
+      HOP_JOB_IMAGE: apache/hop:2.18.0
+      HOP_DOCKER_SOCKET: /var/run/docker.sock
+      HOP_PROJECT_PATH: /project
+      HOP_RETRY_DELAY_SECONDS: 30
+    volumes:
+      - ./app/hop:/project:ro
+      - ./app/backend/src:/app/src:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      api:
+        condition: service_started
+      hop-image:
+        condition: service_completed_successfully
+
+  hop:
+    image: apache/hop:2.18.0
+    profiles: ["hop"]
+    environment:
+      HOP_PROJECT_FOLDER: /project
+      HOP_PROJECT_NAME: modulo_fomento
+      HOP_FILE_PATH: /project/workflows/retomar_ingestao.hwf
+      HOP_RUN_CONFIG: local
+      HOP_INGEST_API_URL: ${HOP_INGEST_API_URL:-}
+      HOP_INGESTAO_ID: ${HOP_INGESTAO_ID:-}
+    volumes:
+      - ./app/hop:/project:ro
+    depends_on:
+      - api
 
   web:
     build: ./app/frontend

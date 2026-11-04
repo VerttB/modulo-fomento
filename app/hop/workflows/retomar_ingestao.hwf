@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow>
+  <name>retomar_ingestao</name>
+  <description>Coordena a retomada de uma ingestão já registrada na API.</description>
+  <parameters/>
+  <actions>
+    <action>
+      <name>Start</name><type>SPECIAL</type><attributes/>
+      <repeat>N</repeat><schedulerType>0</schedulerType><parallel>N</parallel>
+      <xloc>80</xloc><yloc>80</yloc><attributes_hac/>
+    </action>
+    <action>
+      <name>Retomar pela API</name><type>SHELL</type><attributes/>
+      <filename/><work_directory>/tmp</work_directory>
+      <arg_from_previous>N</arg_from_previous><exec_per_row>N</exec_per_row>
+      <set_logfile>N</set_logfile><set_append_logfile>N</set_append_logfile>
+      <add_date>N</add_date><add_time>N</add_time><insertScript>Y</insertScript>
+      <script><![CDATA[#!/bin/sh
+set -eu
+if [ -z "$HOP_INGEST_API_URL" ] || [ -z "$HOP_INGESTAO_ID" ]; then
+  echo "Configure HOP_INGEST_API_URL e HOP_INGESTAO_ID." >&2
+  exit 1
+fi
+if ! printf '%s' "$HOP_INGESTAO_ID" | grep -Eq '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'; then
+  echo "HOP_INGESTAO_ID deve ser um UUID válido." >&2
+  exit 1
+fi
+echo "Solicitando retomada da ingestão $HOP_INGESTAO_ID."
+curl --fail --silent --show-error --connect-timeout 20 -X POST \
+  -o /dev/null "$HOP_INGEST_API_URL/api/v1/ingestoes/$HOP_INGESTAO_ID/retomar"
+echo "Retomada concluída. Consulte a rastreabilidade na API."
+]]></script>
+      <loglevel>Basic</loglevel><parallel>N</parallel>
+      <xloc>300</xloc><yloc>80</yloc><attributes_hac/>
+    </action>
+  </actions>
+  <hops>
+    <hop><from>Start</from><to>Retomar pela API</to><enabled>Y</enabled><evaluation>Y</evaluation><unconditional>Y</unconditional></hop>
+  </hops>
+  <notepads/><attributes/>
+</workflow>

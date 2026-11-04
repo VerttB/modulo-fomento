@@ -1,5 +1,6 @@
 import type {
   IngestResponse,
+  IngestaoRecebida,
   Ingestao,
   IngestaoExecucao,
   IngestaoLinha,
@@ -49,7 +50,7 @@ export function getIngestionLineEvents(
   return requestJson(`${API_BASE}/ingestoes/${id}/linhas/${lineId}/eventos`, signal);
 }
 
-export function uploadIngestion(file: File): Promise<IngestResponse> {
+export function uploadIngestion(file: File): Promise<IngestaoRecebida> {
   const body = new FormData();
   body.append("arquivo", file);
   return requestJson(`${API_BASE}/ingest`, undefined, { method: "POST", body });

@@ -192,6 +192,7 @@ class IngestaoRead(BaseModel):
     quantidade_linhas: int
     tipo: str
     status: IngestaoStatus
+    enfileirada: bool
     iniciada_em: datetime
     finalizada_em: datetime | None
     linhas_processadas: int

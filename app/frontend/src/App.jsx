@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { exportScholarshipSummary, exportScholarships, getScholarshipPage, getStatistics } from "./services/bolsas";
+import { getScholarshipPage, getStatistics } from "./services/bolsas";
 import { getErrorMessage } from "./services/http";
 import { getResearchersPage } from "./services/pesquisadores";
 import { getProjectsPage } from "./services/projetos";
@@ -7,6 +7,7 @@ import { getInstitutionsPage } from "./services/instituicoes";
 import { getCities, synchronizeResearcherTerritories } from "./services/territorios";
 import FiltersPanel from "./componentes/filtros/FiltersPanel.jsx";
 import SummaryExportMenu from "./componentes/exportacao/SummaryExportMenu.jsx";
+import { useScholarshipExport } from "./componentes/exportacao/useScholarshipExport";
 import IngestionsPanel from "./componentes/ingestoes/IngestionsPanel.jsx";
 import EmptyState from "./componentes/ui/EmptyState.jsx";
 import DirectoryPage from "./pages/DirectoryPage.jsx";
@@ -47,14 +48,11 @@ export default function App() {
   const [listData, setListData] = useState(null);
   const [listState, setListState] = useState("loading");
   const [listError, setListError] = useState("");
-  const [exporting, setExporting] = useState(false);
-  const [summaryExporting, setSummaryExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState("csv");
-  const [exportError, setExportError] = useState("");
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const { exporting, summaryExporting, exportFormat, setExportFormat, exportError, setExportError, exportResults, exportSummary } = useScholarshipExport(filters, view === "bolsas" ? searchTerm : "");
   const [cities, setCities] = useState([]);
   const [citiesError, setCitiesError] = useState("");
   const [syncingTerritories, setSyncingTerritories] = useState(false);
@@ -144,38 +142,6 @@ export default function App() {
     cities: formatNumber(report.por_cidade?.length || 0),
     institutions: formatNumber(report.por_instituicao?.length || 0),
   } : { total: "0", modalities: "0", cities: "0", institutions: "0" };
-
-  const exportResults = useCallback(async () => {
-    setExporting(true);
-    setExportError("");
-    try {
-      const blob = await exportScholarships(filters, view === "bolsas" ? searchTerm : "", exportFormat);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `bolsistas-fapesb.${exportFormat}`;
-      link.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } catch (cause) { setExportError(getErrorMessage(cause)); }
-    finally { setExporting(false); }
-  }, [exportFormat, filters, searchTerm, view]);
-
-  const exportSummary = useCallback(async (dimensions) => {
-    setSummaryExporting(true);
-    setExportError("");
-    try {
-      const blob = await exportScholarshipSummary(filters, dimensions, exportFormat);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      const suffix = dimensions.length === 3 ? "todos" : dimensions.join("-");
-      link.download = `resumo-${suffix}-bolsistas-fapesb.${exportFormat}`;
-      link.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      return true;
-    } catch (cause) { setExportError(getErrorMessage(cause)); return false; }
-    finally { setSummaryExporting(false); }
-  }, [exportFormat, filters]);
 
   const synchronizeTerritories = useCallback(async () => {
     setSyncingTerritories(true);

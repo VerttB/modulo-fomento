@@ -27,6 +27,8 @@ services:
       SIMCC_IDENTIFICADOR_URL: ${SIMCC_IDENTIFICADOR_URL:-https://simcc.uesc.br/v3/api/getIdentificadorCNPq}
       SIMCC_RESEARCHERS_URL: ${SIMCC_RESEARCHERS_URL:-https://observatoriocti.secti.ba.gov.br/simcc/api/researchers}
       VIA_CEP_URL: ${VIA_CEP_URL:-https://viacep.com.br/ws/{cep}/json/}
+      MARIA_API_URL: ${MARIA_API_URL:?Configure MARIA_API_URL no arquivo .env}
+      MARIA_API_TIMEOUT_SECONDS: ${MARIA_API_TIMEOUT_SECONDS:?Configure MARIA_API_TIMEOUT_SECONDS no arquivo .env}
       EXTERNAL_API_TIMEOUT_SECONDS: ${EXTERNAL_API_TIMEOUT_SECONDS:-20}
       INGEST_BATCH_SIZE: ${INGEST_BATCH_SIZE:-100}
       INGEST_CHECKPOINT_INTERVAL: ${INGEST_CHECKPOINT_INTERVAL:-10}

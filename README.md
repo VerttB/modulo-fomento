@@ -18,6 +18,8 @@ Copie `.env.example` para `.env`, defina uma senha forte em `POSTGRES_PASSWORD` 
 
 Para desenvolvimento local, entre em `app/backend`, copie `.env.example` para `.env`, configure `DATABASE_URL`, instale as dependências com `uv sync --dev` e inicie com `uv run uvicorn src.main:app --reload`. Para a interface, em outro terminal entre em `app/frontend`, instale com `npm install` e execute `npm run dev`.
 
+Para o assistente Maria, configure `MARIA_API_URL` com a URL absoluta da API e `MARIA_API_TIMEOUT_SECONDS` com o tempo máximo de espera em segundos (por exemplo, 120) no ambiente do backend e no `.env` da raiz ao usar Docker. A API do observatório encaminha as solicitações à Maria. As conversas retornadas são compartilhadas pela API externa; não há separação por usuário neste projeto. Os filtros do observatório não são enviados automaticamente às perguntas.
+
 ## Migrações e testes
 
 As migrations não são aplicadas automaticamente pelo compose. Quando estiver pronto, rode a partir de `app/backend`: `uv run alembic upgrade head`. Para os testes, rode `uv run pytest` no mesmo diretório.

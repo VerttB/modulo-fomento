@@ -6,16 +6,22 @@ if (!configuredApiBase) {
   throw new Error("Configure VITE_API_BASE_URL com a URL absoluta da API.");
 }
 
-export const API_BASE = new URL(configuredApiBase).toString().replace(/\/$/, "");
+export const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
     super(message);
     this.name = "ApiError";
   }
 }
 
-async function request(path: string, options: RequestInit = {}): Promise<Response> {
+async function request(
+  path: string,
+  options: RequestInit = {},
+): Promise<Response> {
   const response = await fetch(path, options);
   if (!response.ok) {
     let detail = "Não foi possível concluir a operação.";
@@ -23,7 +29,11 @@ async function request(path: string, options: RequestInit = {}): Promise<Respons
       const body = (await response.json()) as ApiErrorBody;
       if (typeof body.detail === "string") detail = body.detail;
       else if (Array.isArray(body.detail)) {
-        detail = body.detail.map((item) => item.msg).filter(Boolean).join(" ") || detail;
+        detail =
+          body.detail
+            .map((item) => item.msg)
+            .filter(Boolean)
+            .join(" ") || detail;
       }
     } catch {
       // Mantém uma mensagem simples se a resposta não tiver JSON.
@@ -42,7 +52,10 @@ export async function requestJson<T>(
   return (await response.json()) as T;
 }
 
-export async function requestBlob(path: string, options: RequestInit = {}): Promise<Blob> {
+export async function requestBlob(
+  path: string,
+  options: RequestInit = {},
+): Promise<Blob> {
   const response = await request(path, options);
   return response.blob();
 }
@@ -51,5 +64,7 @@ export function getErrorMessage(error: unknown): string {
   if (error instanceof ApiError && error.status === 503) {
     return "A API está temporariamente indisponível. Tente novamente em instantes.";
   }
-  return error instanceof Error ? error.message : "Falha ao conectar com a API.";
+  return error instanceof Error
+    ? error.message
+    : "Falha ao conectar com a API.";
 }

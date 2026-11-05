@@ -13,7 +13,6 @@ from src.routes.projeto import router as projeto_router
 from src.routes.unidade import router as unidade_router
 from src.routes.territorio_identidade import router as territorio_identidade_router
 from src.routes.maria import router as maria_router
-from src.routes.atualizacao_pesquisadores import router as atualizacao_pesquisadores_router
 
 router = APIRouter()
 router.include_router(projeto_router)
@@ -29,4 +28,3 @@ router.include_router(palavra_chave_router)
 router.include_router(ingest_router)
 router.include_router(ingestao_router)
 router.include_router(maria_router)
-router.include_router(atualizacao_pesquisadores_router)

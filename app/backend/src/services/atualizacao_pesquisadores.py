@@ -1,4 +1,5 @@
-from hmac import compare_digest
+from collections.abc import Callable
+from uuid import UUID
 
 import httpx
 from sqlalchemy import func, or_, select, update
@@ -6,31 +7,19 @@ from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.enums import PesquisadorStatus
-from src.core.exceptions import ApplicationError
 from src.models import Pesquisador
-from src.schemas.atualizacao_pesquisadores import AtualizacaoPesquisadoresRequest, AtualizacaoPesquisadoresResultado
+from src.schemas.atualizacao_pesquisadores import AtualizacaoPesquisadoresResultado
 from src.services.privacidade import sanitizar_texto_livre
-
-
-class AtualizacaoNaoAutorizada(ApplicationError):
-    status_code = 403
-
-
-class AtualizacaoNaoConfigurada(ApplicationError):
-    status_code = 503
 
 
 class RespostaOdaInvalida(Exception):
     pass
 
 
-def _autorizar(token: str | None) -> str:
-    secret = settings.oda_atualizacao_token
+def _url_oda() -> str:
     url = settings.oda_pesquisadores_url
-    if not secret or not secret.get_secret_value() or not url or not url.strip():
-        raise AtualizacaoNaoConfigurada("A atualização provisória de pesquisadores não está configurada.")
-    if not token or not compare_digest(token.encode(), secret.get_secret_value().encode()):
-        raise AtualizacaoNaoAutorizada("Chave de atualização inválida.")
+    if not url or not url.strip():
+        raise RuntimeError("Configure ODA_PESQUISADORES_URL antes de executar a atualização.")
     return url
 
 
@@ -57,18 +46,23 @@ def _consultar_nome(client: httpx.Client, url: str, lattes: str) -> str | None:
     return name.strip()
 
 
-def atualizar_pendentes(db: Session, payload: AtualizacaoPesquisadoresRequest, token: str | None):
-    url = _autorizar(token)
+def atualizar_pendentes(
+    db: Session,
+    tamanho_lote: int,
+    apos_id: UUID | None = None,
+    ao_processar: Callable[[UUID, AtualizacaoPesquisadoresResultado], None] | None = None,
+):
+    url = _url_oda()
     filtro_nome_vazio = or_(Pesquisador.nome.is_(None), func.trim(Pesquisador.nome) == "")
     query = select(Pesquisador.id, Pesquisador.lattes).where(
         Pesquisador.status == PesquisadorStatus.PENDENTE,
         Pesquisador.lattes.is_not(None), func.trim(Pesquisador.lattes) != "", filtro_nome_vazio,
-    ).order_by(Pesquisador.id).limit(payload.tamanho_lote)
-    if payload.apos_id:
-        query = query.where(Pesquisador.id > payload.apos_id)
+    ).order_by(Pesquisador.id).limit(tamanho_lote)
+    if apos_id:
+        query = query.where(Pesquisador.id > apos_id)
     candidatos = db.execute(query).all()
     db.rollback()  # Não mantém uma transação aberta durante a chamada externa.
-    resultado = AtualizacaoPesquisadoresResultado(ultimo_id=payload.apos_id)
+    resultado = AtualizacaoPesquisadoresResultado(ultimo_id=apos_id)
     with httpx.Client(timeout=settings.external_api_timeout_seconds) as client:
         for pesquisador_id, lattes in candidatos:
             try:
@@ -92,5 +86,7 @@ def atualizar_pendentes(db: Session, payload: AtualizacaoPesquisadoresRequest, t
             else:
                 resultado.sem_resultado += 1
             resultado.ultimo_id = pesquisador_id
-    resultado.concluido = len(candidatos) < payload.tamanho_lote
+            if ao_processar is not None:
+                ao_processar(pesquisador_id, resultado)
+    resultado.concluido = len(candidatos) < tamanho_lote
     return resultado

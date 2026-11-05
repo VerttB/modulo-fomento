@@ -1,11 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-
-
-class AtualizacaoPesquisadoresRequest(BaseModel):
-    apos_id: UUID | None = None
-    tamanho_lote: int = Field(default=30, ge=1, le=100)
+from pydantic import BaseModel
 
 
 class AtualizacaoPesquisadoresResultado(BaseModel):

@@ -16,7 +16,7 @@ import IndicatorsPage from "./pages/IndicatorsPage.jsx";
 import PanoramaPage from "./pages/PanoramaPage.jsx";
 import TerritoriesPage from "./pages/TerritoriesPage.jsx";
 import InstitutionProfilePage from "./pages/InstitutionProfilePage.jsx";
-import { formatNumber, normalizeText } from "./utils/format.js";
+import { formatNumber } from "./utils/format.js";
 
 const navigation = [
   ["panorama", "Panorama", "◫"],
@@ -26,13 +26,12 @@ const navigation = [
   ["pesquisadores", "Pesquisadores", "♙"],
   ["projetos", "Projetos", "◇"],
   ["instituicoes", "Instituições", "⌂"],
-  ["maria", "Consulta guiada", "✳"],
+  ["maria", "Maria IA", "✳"],
 ];
 const initialFilters = { from: "", to: "", modality: [], city: [], institution: [], area: [], largeArea: [], territory: [] };
 const labelFor = (view) => view === "ingestoes" ? "Ingestões" : navigation.find(([id]) => id === view)?.[1] || "Panorama";
 const directoryViews = ["instituicoes", "pesquisadores", "projetos", "bolsas"];
-const reportViews = ["panorama", "indicadores", "territorios", "maria"];
-const metricRows = (items, key) => (items || []).map((item) => ({ label: item[key], total: item.total }));
+const reportViews = ["panorama", "indicadores", "territorios"];
 
 export default function App() {
   const [view, setView] = useState("panorama");
@@ -48,8 +47,6 @@ export default function App() {
   const [listData, setListData] = useState(null);
   const [listState, setListState] = useState("loading");
   const [listError, setListError] = useState("");
-  const [query, setQuery] = useState("");
-  const [answer, setAnswer] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const { exporting, summaryExporting, exportFormat, setExportFormat, exportError, setExportError, exportResults, exportSummary } = useScholarshipExport(filters, view === "bolsas" ? searchTerm : "");
@@ -60,6 +57,7 @@ export default function App() {
   const [selectedInstitution, setSelectedInstitution] = useState(null);
   const [institutionProfileState, setInstitutionProfileState] = useState("loading");
   const [ingestionApiState, setIngestionApiState] = useState("loading");
+  const [mariaApiState, setMariaApiState] = useState("loading");
 
   useEffect(() => {
     setSearchDraft("");
@@ -157,28 +155,6 @@ export default function App() {
     } finally { setSyncingTerritories(false); }
   }, []);
 
-  function ask(question = query) {
-    if (!question.trim() || !report) return;
-    setQuery(question);
-    const normalized = normalizeText(question);
-    const selected = [
-      ...modalityRows.map((item) => ["modalidade", item.label]),
-      ...(report.por_cidade || []).map((item) => ["cidade", item.cidade]),
-      ...(report.por_territorio_identidade || []).map((item) => ["territorio", item.territorio_identidade]),
-      ...(report.por_instituicao || []).map((item) => ["instituicao", item.sigla || item.nome]),
-    ].find(([, value]) => value && normalized.includes(normalizeText(value)));
-    if (selected) {
-      const rows = selected[0] === "modalidade" ? modalityRows
-        : selected[0] === "cidade" ? metricRows(report.por_cidade, "cidade")
-          : selected[0] === "territorio" ? metricRows(report.por_territorio_identidade, "territorio_identidade")
-            : institutionRows;
-      const match = rows.find((item) => normalizeText(item.label) === normalizeText(selected[1]));
-      setAnswer(match ? `${match.label}: ${formatNumber(match.total)} registros de bolsistas no recorte selecionado.` : "Não encontrei esse recorte entre os dados agregados disponíveis.");
-      return;
-    }
-    setAnswer(`${formatNumber(report.total)} registros de bolsistas no recorte atual, em ${formatNumber(report.por_cidade?.length || 0)} municípios e ${formatNumber(report.por_instituicao?.length || 0)} instituições. Consulte os indicadores para detalhar por modalidade, cidade, instituição, área ou território.`);
-  }
-
   function setFilter(key, value) {
     setListPage(1);
     setFilters((current) => ({ ...current, [key]: value }));
@@ -191,6 +167,7 @@ export default function App() {
 
   const currentApiState = view === "instituicao-perfil" ? institutionProfileState
     : view === "ingestoes" ? ingestionApiState
+    : view === "maria" ? mariaApiState
     : directoryViews.includes(view) ? listState : reportState;
   const canExport = view === "bolsas" ? listState === "ready" : reportState === "ready";
 
@@ -222,7 +199,7 @@ export default function App() {
       <main className="main-area">
         <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav((open) => !open)} aria-label="Abrir menu">☰</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>
         <div className="page-content">
-        <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Explore os dados" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><label className="export-format"><span>Formato</span><select value={exportFormat} onChange={(event) => setExportFormat(event.target.value)} aria-label="Formato da exportação"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="json">JSON</option></select></label><button className="export-button" disabled={!canExport || exporting} aria-busy={exporting} onClick={exportResults}>{exporting ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span>↓</span> Exportar registros</>}</button><SummaryExportMenu disabled={!canExport} loading={summaryExporting} format={exportFormat} onExport={exportSummary} /></div>}</div>
+        <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Assistente Maria" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["maria", "pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><label className="export-format"><span>Formato</span><select value={exportFormat} onChange={(event) => setExportFormat(event.target.value)} aria-label="Formato da exportação"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="json">JSON</option></select></label><button className="export-button" disabled={!canExport || exporting} aria-busy={exporting} onClick={exportResults}>{exporting ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span>↓</span> Exportar registros</>}</button><SummaryExportMenu disabled={!canExport} loading={summaryExporting} format={exportFormat} onExport={exportSummary} /></div>}</div>
           {directoryViews.includes(view) && <form className="search-toolbar" onSubmit={(event) => { event.preventDefault(); setListPage(1); setSearchTerm(searchDraft.trim()); }}>
           <span aria-hidden="true">⌕</span><input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={view === "projetos" ? 'Buscar título, resumo ou área… (AND, OR, NOT)' : view === "bolsas" ? "Buscar pessoa, projeto, instituição, modalidade ou cidade…" : view === "instituicoes" ? "Buscar instituição por nome ou sigla…" : "Buscar por nome, cidade ou Lattes…"} aria-label="Buscar registros" />
             <button type="submit">Buscar</button>{(searchTerm || searchDraft) && <button type="button" className="search-clear" onClick={() => { setSearchDraft(""); setSearchTerm(""); setListPage(1); }}>Limpar</button>}
@@ -233,7 +210,7 @@ export default function App() {
           {view === "ingestoes" ? <IngestionsPanel onApiStateChange={setIngestionApiState} />
             : view === "instituicao-perfil" ? selectedInstitution ? <><InstitutionProfilePage institution={selectedInstitution} onBack={() => setView("instituicoes")} onApiStateChange={setInstitutionProfileState} /><PageFooter /></> : <section className="panel"><EmptyState message="Selecione uma instituição na lista para abrir seu perfil." /></section>
               : directoryViews.includes(view) ? <><DirectoryPage view={view} data={listData} state={listState} error={listError} onRetry={() => setRetry((value) => value + 1)} onPageChange={setListPage} onSelectInstitution={(institution) => { setSelectedInstitution(institution); setView("instituicao-perfil"); }} /><PageFooter /></>
-              : view === "maria" ? <GuidedSearchPage query={query} answer={answer} onChange={setQuery} onSubmit={ask} total={report?.total || 0} disabled={reportState !== "ready"} />
+              : view === "maria" ? <GuidedSearchPage onApiStateChange={setMariaApiState} />
                 : reportState === "loading" ? <section className="panel"><EmptyState message="Consultando os dados da API…" /></section>
                   : reportState === "error" ? null : <>
                     {view === "panorama" && <PanoramaPage report={report} totals={totals} modalityRows={modalityRows} institutionRows={institutionRows} filters={filters} onNavigate={setView} />}

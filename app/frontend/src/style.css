@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./styles/app.css";
 @import "./styles/api.css";
+@import "./styles/maria.css";
 @import "./styles/utilities.css";
 
 @config "../tailwind.config.js";

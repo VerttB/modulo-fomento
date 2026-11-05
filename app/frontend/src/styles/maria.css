@@ -1,0 +1,26 @@
+.view-maria .page-content { max-width: none; }
+.maria-panel.maria-chat { display: flex; flex-direction: column; width: 100%; max-width: none; min-height: calc(100vh - 210px); margin: 0; padding: var(--spacing-section); text-align: left; }
+.maria-layout { display: grid; flex: 1; grid-template-columns: minmax(180px, 260px) minmax(0, 1fr); gap: var(--spacing-section); margin-top: var(--spacing-section); }
+.maria-conversations, .maria-dialogue { min-width: 0; border: 1px solid var(--color-border); border-radius: var(--radius-panel); padding: var(--spacing-section); background: var(--color-surface); }
+.maria-conversations { display: flex; flex-direction: column; align-items: stretch; gap: .5rem; max-height: 75vh; overflow: auto; }
+.maria-conversation { border: 1px solid var(--color-border); border-radius: var(--radius-control); padding: .6rem; background: var(--color-surface); color: var(--color-ink); text-align: left; overflow-wrap: anywhere; }
+.maria-conversation[aria-pressed="true"] { border-color: var(--color-brand); color: var(--color-brand-dark); }
+.maria-dialogue { display: flex; flex-direction: column; }
+.maria-dialogue .question-form { width: 100%; max-width: none; margin: 0; }
+.maria-dialogue .question-form input { min-height: 2.75rem; font-size: var(--text-body); }
+.maria-messages { display: flex; flex: 1; flex-direction: column; align-items: stretch; gap: var(--spacing-section); min-height: 45vh; max-height: 65vh; overflow: auto; margin: var(--spacing-section) 0; }
+.maria-message { padding: var(--spacing-section); background: var(--color-app); border-radius: var(--radius-panel); overflow-wrap: anywhere; }
+.maria-typing { display: flex; align-items: center; gap: .75rem; align-self: flex-start; padding: .75rem 1rem; border-radius: var(--radius-panel); background: var(--color-app); color: var(--color-brand-dark); font-size: var(--text-body); }
+.maria-typing-dots { display: flex; gap: .25rem; }
+.maria-typing-dots i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-brand); animation: maria-pulse 1s ease-in-out infinite alternate; }
+.maria-typing-dots i:nth-child(2) { animation-delay: .2s; }
+.maria-typing-dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes maria-pulse { from { opacity: .3; transform: translateY(0); } to { opacity: 1; transform: translateY(-.25rem); } }
+.maria-message-text { white-space: pre-wrap; }
+.maria-data { margin-top: var(--spacing-section); }
+.maria-table-scroll { overflow-x: auto; }
+.maria-data table { width: 100%; border-collapse: collapse; text-align: left; }
+.maria-data th, .maria-data td { border-bottom: 1px solid var(--color-border); padding: .5rem; }
+.maria-data td:first-child { display: table-cell; }
+@media (max-width: 700px) { .maria-layout { grid-template-columns: 1fr; } .maria-conversations { max-height: 16rem; overflow: auto; } .maria-messages { min-height: 40vh; } }
+@media (prefers-reduced-motion: reduce) { .maria-typing-dots i { animation: none; } }

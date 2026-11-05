@@ -17,6 +17,7 @@ import PanoramaPage from "./pages/PanoramaPage.jsx";
 import TerritoriesPage from "./pages/TerritoriesPage.jsx";
 import InstitutionProfilePage from "./pages/InstitutionProfilePage.jsx";
 import { formatNumber } from "./utils/format.js";
+import { publicAssetUrl } from "./utils/publicAssetUrl.js";
 
 const navigation = [
   ["panorama", "Panorama", "◫"],
@@ -175,7 +176,7 @@ export default function App() {
     <div className={`app-shell view-${view} min-h-screen bg-app text-ink font-sans`}>
       <aside className={`sidebar ${mobileNav ? "sidebar-open" : ""}`}>
         <a className="brand licuri-brand" href="#panorama" onClick={() => setView("panorama")}>
-          <img className="licuri-brand-image" src="/marca/licuri.jpg" alt="Licuri" />
+          <img className="licuri-brand-image" src={publicAssetUrl("marca/licuri.jpg")} alt="Licuri" />
           <span className="licuri-brand-description">Plataforma de Monitoramento e Inteligência Territorial dos Bolsistas de Pesquisa da Bahia</span>
         </a>
         <div className="side-caption">EXPLORAR</div>
@@ -197,7 +198,7 @@ export default function App() {
             </div>
           )}
         </nav>
-        <div className="sidebar-bottom"><div className="fapesb-stamp"><img className="fapesb-brand-image" src="/marca/fapesb.png" alt="FAPESB — Fundação de Amparo à Pesquisa do Estado da Bahia" /></div><div className="side-footer">Observatório de Bolsistas <span>v1.0</span></div></div>
+        <div className="sidebar-bottom"><div className="fapesb-stamp"><img className="fapesb-brand-image" src={publicAssetUrl("marca/fapesb.png")} alt="FAPESB — Fundação de Amparo à Pesquisa do Estado da Bahia" /></div><div className="side-footer">Observatório de Bolsistas <span>v1.0</span></div></div>
       </aside>
       <main className="main-area">
         <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav((open) => !open)} aria-label="Abrir menu">☰</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { GeoJSON, MapContainer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { formatNumber, normalizeText } from "../../utils/format.js";
+import { publicAssetUrl } from "../../utils/publicAssetUrl.js";
 import "leaflet/dist/leaflet.css";
 import "./MapaCidades.css";
 
@@ -95,7 +96,7 @@ export default function MapaCidades({
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/mapas/territorio_cidades_relacionados.json", { signal: controller.signal })
+    fetch(publicAssetUrl("mapas/territorio_cidades_relacionados.json"), { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Não foi possível carregar os limites da Bahia.");
         return response.json();

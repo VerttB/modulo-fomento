@@ -20,6 +20,26 @@ Para desenvolvimento local, entre em `app/backend`, copie `.env.example` para `.
 
 Para o assistente Maria, configure `MARIA_API_URL` com a URL absoluta da API e `MARIA_API_TIMEOUT_SECONDS` com o tempo máximo de espera em segundos (por exemplo, 120) no ambiente do backend e no `.env` da raiz ao usar Docker. A API do observatório encaminha as solicitações à Maria. As conversas retornadas são compartilhadas pela API externa; não há separação por usuário neste projeto. Os filtros do observatório não são enviados automaticamente às perguntas.
 
+### Recuperação de localização de pesquisadores
+
+O comando `python -m src.commands.recuperar_localizacao --ingestao ID --arquivo CAMINHO` faz uma prévia sem gravar. O arquivo deve ser o original da ingestão e ter o mesmo SHA-256 registrado no banco. Para aplicar, acrescente `--aplicar`. Em Docker, monte o arquivo original como somente leitura em um container temporário e passe o caminho dentro do container. O arquivo pode conter CPF e deve permanecer restrito; o comando não o registra nem o grava no banco.
+
+Exemplo no PowerShell, a partir da raiz do projeto (substitua o caminho e o identificador):
+
+```powershell
+docker compose run --rm --no-deps --volume "C:/caminho/arquivo.xlsx:/arquivo/original.xlsx:ro" api /app/.venv/bin/python -m src.commands.recuperar_localizacao --ingestao ID_DA_INGESTAO --arquivo /arquivo/original.xlsx
+```
+
+Revise os totais da prévia e repita o comando com `--aplicar` para gravar. É necessário que o serviço de banco esteja acessível e que a API consiga acessar o ViaCEP e o CSV de territórios configurado.
+
+O comando confere os vínculos da bolsa com a linha de rastreabilidade e compara título, data inicial e instituição antes de preencher CEPs ausentes. A ordem é unidade, departamento e instituição. Bolsas com dados divergentes, sem linha confiável ou sem CEP válido são contabilizadas e ignoradas. Depois consulta o ViaCEP por CEP distinto; quando ele confirma que o primeiro CEP da linha não existe, testa o próximo da ordem e registra o primeiro encontrado. Uma falha de comunicação não é tratada como CEP inexistente. A cidade e o território dos pesquisadores são atualizados conforme a última bolsa não descartada, e os indicadores são recalculados. Ao final, confira os contadores e se `metricas_atualizadas` é `1`. Consultas sem resultado não sobrescrevem cidades existentes. Falhas consecutivas interrompem as consultas; o comando pode ser executado novamente com o mesmo arquivo para retomar. Execute uma ingestão por vez e mantenha o arquivo original protegido.
+
+### Atualização provisória de pesquisadores pela ODA
+
+Para habilitar a operação administrativa temporária, configure `ODA_PESQUISADORES_URL=https://oda.vertb.com.br/pesquisadores` e uma chave longa e aleatória em `ODA_ATUALIZACAO_TOKEN`. A rota `POST /api/v1/administracao/pesquisadores/atualizar-oda` recebe a chave no header `X-Atualizacao-Token` e um JSON com `tamanho_lote` (1 a 100, padrão 30) e `apos_id` (opcional). Sem essas configurações, a rota fica desabilitada.
+
+A operação consulta pesquisadores pendentes que já têm Lattes e nome vazio; cada nome encontrado é gravado individualmente e o pesquisador passa a aprovado. Não modifica cidade, território ou pesquisadores rejeitados. A resposta informa quantos foram consultados, atualizados, não encontrados ou alterados em paralelo, além de `ultimo_id`, `concluido` e eventual `erro`. Para continuar, envie o `ultimo_id` da resposta como `apos_id` na próxima chamada até `concluido` ser verdadeiro. Em caso de falha externa, retome usando o mesmo `ultimo_id`; se ele for nulo, reinicie sem `apos_id`. Resultados sem correspondência são contabilizados e só serão consultados novamente ao iniciar uma nova varredura. Se a resposta for perdida, reiniciar a varredura não sobrescreve os nomes já preenchidos. Após o uso, remova as duas configurações e reinicie a API para desabilitar a rota.
+
 ## Migrações e testes
 
 As migrations não são aplicadas automaticamente pelo compose. Quando estiver pronto, rode a partir de `app/backend`: `uv run alembic upgrade head`. Para os testes, rode `uv run pytest` no mesmo diretório.

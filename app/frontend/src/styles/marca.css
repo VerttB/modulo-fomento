@@ -1,0 +1,35 @@
+.licuri-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+  padding: 0 .5rem var(--spacing-section);
+}
+
+.licuri-brand-image {
+  display: block;
+  width: 100%;
+  max-width: 12rem;
+  height: auto;
+}
+
+.licuri-brand-description {
+  color: var(--color-licuri);
+  font-family: var(--font-display);
+  font-size: var(--text-brand-description);
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.fapesb-brand-image {
+  display: block;
+  width: 100%;
+  max-width: 11rem;
+  height: auto;
+}
+
+@media (max-height: 800px) {
+  .sidebar { overflow-y: auto; }
+}

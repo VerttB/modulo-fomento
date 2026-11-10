@@ -26,7 +26,6 @@ services:
       INGESTOES_PATH: ${INGESTOES_PATH:-/app/storage/ingestoes}
       SIMCC_IDENTIFICADOR_URL: ${SIMCC_IDENTIFICADOR_URL:-https://simcc.uesc.br/v3/api/getIdentificadorCNPq}
       SIMCC_RESEARCHERS_URL: ${SIMCC_RESEARCHERS_URL:-https://observatoriocti.secti.ba.gov.br/simcc/api/researchers}
-      ODA_PESQUISADORES_URL: ${ODA_PESQUISADORES_URL:-}
       VIA_CEP_URL: ${VIA_CEP_URL:-https://viacep.com.br/ws/{cep}/json/}
       MARIA_API_URL: ${MARIA_API_URL:?Configure MARIA_API_URL no arquivo .env}
       MARIA_API_TIMEOUT_SECONDS: ${MARIA_API_TIMEOUT_SECONDS:?Configure MARIA_API_TIMEOUT_SECONDS no arquivo .env}

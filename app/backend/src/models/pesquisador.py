@@ -29,6 +29,9 @@ class Pesquisador(Base):
     )
 
     bolsas: Mapped[list["Bolsa"]] = relationship(back_populates="pesquisador")
+    foto: Mapped["FotoPesquisador | None"] = relationship(
+        back_populates="pesquisador", cascade="all, delete-orphan", uselist=False
+    )
     territorio_identidade: Mapped["TerritorioIdentidade | None"] = relationship(
         back_populates="pesquisadores"
     )

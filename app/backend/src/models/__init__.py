@@ -3,6 +3,7 @@ from src.models.base import Base
 from src.models.bolsa import Bolsa
 from src.models.bolsa_conflito import BolsaConflito
 from src.models.departamento import Departamento
+from src.models.foto_pesquisador import FotoPesquisador
 from src.models.instituicao import Instituicao
 from src.models.ingestao import Ingestao
 from src.models.ingestao_execucao import IngestaoExecucao
@@ -20,6 +21,7 @@ __all__ = [
     "Bolsa",
     "BolsaConflito",
     "Departamento",
+    "FotoPesquisador",
     "Instituicao",
     "Ingestao",
     "IngestaoExecucao",

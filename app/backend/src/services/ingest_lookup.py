@@ -53,10 +53,26 @@ def _extrair_identificador(payload: Any) -> str | None:
     return None
 
 
-def _extrair_perfil(payload: Any) -> tuple[str | None, str | None, str | None] | None:
+def _extrair_url_foto(value: Any) -> str | None:
+    if isinstance(value, str):
+        url = value.strip()
+        return url if url.startswith(("https://", "http://")) and len(url) <= 2048 else None
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            normalized = normalizar(str(key)).replace("_", "").replace(" ", "")
+            if normalized in {"url", "src", "href", "uri", "link"}:
+                url = _extrair_url_foto(nested)
+                if url:
+                    return url
+    return None
+
+
+def _extrair_perfil_completo(
+    payload: Any,
+) -> tuple[str | None, str | None, str | None, str | None] | None:
     if isinstance(payload, list):
         for item in payload:
-            profile = _extrair_perfil(item)
+            profile = _extrair_perfil_completo(item)
             if profile:
                 return profile
         return None
@@ -79,20 +95,38 @@ def _extrair_perfil(payload: Any) -> tuple[str | None, str | None, str | None] |
             ),
             None,
         )
+        photo_value = next(
+            (
+                value
+                for key, value in fields.items()
+                if any(
+                    marker in normalizar(key).replace("_", "").replace(" ", "")
+                    for marker in ("foto", "photo", "image", "imagem", "picture", "avatar")
+                )
+            ),
+            None,
+        )
         if isinstance(territory, dict):
             territory = territory.get("name") or territory.get("nome")
-        if name or city or territory:
+        photo_url = _extrair_url_foto(photo_value)
+        if name or city or territory or photo_url:
             return (
                 str(name).strip() if name else None,
                 str(city).strip() if city else None,
                 str(territory).strip() if territory else None,
+                photo_url,
             )
         for value in payload.values():
             if isinstance(value, (dict, list)):
-                profile = _extrair_perfil(value)
+                profile = _extrair_perfil_completo(value)
                 if profile:
                     return profile
     return None
+
+
+def _extrair_perfil(payload: Any) -> tuple[str | None, str | None, str | None] | None:
+    profile = _extrair_perfil_completo(payload)
+    return profile[:3] if profile else None
 
 
 def consultar_pesquisador(
@@ -117,16 +151,26 @@ def consultar_pesquisador(
 
 
 def consultar_perfil_por_lattes(
-    client: httpx.Client, lattes: str
+    client: httpx.Client, lattes: str, collection: str | None = None
 ) -> tuple[str | None, str | None, str | None]:
+    perfil = consultar_perfil_completo_por_lattes(client, lattes, collection)
+    return perfil[:3] if perfil else (None, None, None)
+
+
+def consultar_perfil_completo_por_lattes(
+    client: httpx.Client, lattes: str, collection: str | None = None
+) -> tuple[str | None, str | None, str | None, str | None] | None:
     try:
+        params = {"lattes_id": lattes}
+        if collection:
+            params["collection"] = collection
         resposta_perfil = client.get(
-            settings.simcc_researchers_url, params={"lattes_id": lattes}
+            settings.simcc_researchers_url, params=params
         )
         resposta_perfil.raise_for_status()
     except httpx.HTTPStatusError as error:
         if error.response.status_code == httpx.codes.NOT_FOUND:
-            return None, None, None
+            return None
         raise ExternalLookupError(
             "Não foi possível consultar os dados públicos do pesquisador."
         ) from error
@@ -134,8 +178,7 @@ def consultar_perfil_por_lattes(
         raise ExternalLookupError(
             "Não foi possível consultar os dados públicos do pesquisador."
         ) from error
-    perfil = _extrair_perfil(_json(resposta_perfil))
-    return perfil or (None, None, None)
+    return _extrair_perfil_completo(_json(resposta_perfil))
 
 
 def salvar_pesquisador(

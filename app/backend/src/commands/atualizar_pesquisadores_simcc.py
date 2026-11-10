@@ -13,7 +13,7 @@ from src.services.atualizacao_pesquisadores import atualizar_pendentes
 
 TAMANHO_LOTE_PADRAO = 100
 TAMANHO_LOTE_MAXIMO = 100
-NOME_CHECKPOINT = "atualizacao_pesquisadores_oda.checkpoint.json"
+NOME_CHECKPOINT = "atualizacao_pesquisadores_simcc.checkpoint.json"
 
 
 def _ler_checkpoint(caminho: Path) -> UUID | None:
@@ -47,10 +47,6 @@ def executar(
     apos_id: UUID | None = None,
     reiniciar: bool = False,
 ) -> int:
-    if not settings.oda_pesquisadores_url or not settings.oda_pesquisadores_url.strip():
-        print("Configure ODA_PESQUISADORES_URL antes de executar a atualização.", file=sys.stderr)
-        return 2
-
     if apos_id is not None and reiniciar:
         print("Use --apos-id ou --reiniciar, não ambos.", file=sys.stderr)
         return 2
@@ -64,6 +60,7 @@ def executar(
     totais = {
         "consultados": 0,
         "atualizados": 0,
+        "fotos_atualizadas": 0,
         "sem_resultado": 0,
         "alterados_concorrentemente": 0,
     }
@@ -80,6 +77,7 @@ def executar(
                         "lote": lote_numero,
                         "consultados_no_lote": andamento.consultados,
                         "atualizados_no_lote": andamento.atualizados,
+                        "fotos_atualizadas_no_lote": andamento.fotos_atualizadas,
                         "sem_resultado_no_lote": andamento.sem_resultado,
                         "ultimo_id": str(ultimo_id),
                     }, ensure_ascii=False), flush=True)
@@ -106,7 +104,7 @@ def executar(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Atualiza em sequência os nomes dos pesquisadores pendentes pela API ODA."
+        description="Atualiza em sequência os nomes dos pesquisadores pendentes pela API SIMCC."
     )
     parser.add_argument(
         "--tamanho-lote",

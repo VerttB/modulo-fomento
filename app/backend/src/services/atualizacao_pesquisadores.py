@@ -7,43 +7,29 @@ from sqlalchemy.orm import Session
 
 from src.core.config import settings
 from src.core.enums import PesquisadorStatus
-from src.models import Pesquisador
+from src.core.exceptions import ExternalLookupError
+from src.models import FotoPesquisador, Pesquisador
 from src.schemas.atualizacao_pesquisadores import AtualizacaoPesquisadoresResultado
+from src.services.ingest_lookup import consultar_perfil_completo_por_lattes
 from src.services.privacidade import sanitizar_texto_livre
 
 
-class RespostaOdaInvalida(Exception):
+class RespostaPerfilSimccInvalida(Exception):
     pass
 
 
-def _url_oda() -> str:
-    url = settings.oda_pesquisadores_url
-    if not url or not url.strip():
-        raise RuntimeError("Configure ODA_PESQUISADORES_URL antes de executar a atualização.")
-    return url
-
-
-def _consultar_nome(client: httpx.Client, url: str, lattes: str) -> str | None:
-    response = client.get(url, params={"page": 1, "size": 30, "lattesId": lattes})
-    response.raise_for_status()
-    try:
-        payload = response.json()
-    except ValueError as error:
-        raise RespostaOdaInvalida from error
-    if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):
-        raise RespostaOdaInvalida
-    data = payload["data"]
-    if not data:
-        return None
-    matches = [item for item in data if isinstance(item, dict) and str(item.get("lattesId")) == lattes]
-    if len(matches) != 1:
-        raise RespostaOdaInvalida
-    name = matches[0].get("nome")
-    if name is None or (isinstance(name, str) and not name.strip()):
-        return None
+def _consultar_perfil(client: httpx.Client, lattes: str) -> tuple[str | None, str | None]:
+    profile = consultar_perfil_completo_por_lattes(
+        client, lattes, collection="all"
+    )
+    if not profile:
+        return None, None
+    name, _city, _territory, photo_url = profile
+    if not name:
+        return None, photo_url
     if not isinstance(name, str) or len(name.strip()) > 255 or sanitizar_texto_livre(name) != name:
-        raise RespostaOdaInvalida
-    return name.strip()
+        raise RespostaPerfilSimccInvalida
+    return name.strip(), photo_url
 
 
 def atualizar_pendentes(
@@ -52,7 +38,6 @@ def atualizar_pendentes(
     apos_id: UUID | None = None,
     ao_processar: Callable[[UUID, AtualizacaoPesquisadoresResultado], None] | None = None,
 ):
-    url = _url_oda()
     filtro_nome_vazio = or_(Pesquisador.nome.is_(None), func.trim(Pesquisador.nome) == "")
     query = select(Pesquisador.id, Pesquisador.lattes).where(
         Pesquisador.status == PesquisadorStatus.PENDENTE,
@@ -66,9 +51,9 @@ def atualizar_pendentes(
     with httpx.Client(timeout=settings.external_api_timeout_seconds) as client:
         for pesquisador_id, lattes in candidatos:
             try:
-                nome = _consultar_nome(client, url, lattes)
-            except (httpx.HTTPError, RespostaOdaInvalida):
-                resultado.erro = "Falha ou resposta inválida da API ODA; retome a partir do último ID informado."
+                nome, foto_url = _consultar_perfil(client, lattes)
+            except (httpx.HTTPError, ExternalLookupError, RespostaPerfilSimccInvalida):
+                resultado.erro = "Falha ou resposta inválida da API SIMCC; retome a partir do último ID informado."
                 return resultado
             resultado.consultados += 1
             if nome:
@@ -78,12 +63,25 @@ def atualizar_pendentes(
                     Pesquisador.status == PesquisadorStatus.PENDENTE,
                     filtro_nome_vazio,
                 ).values(nome=nome, status=PesquisadorStatus.APROVADO)).rowcount
-                db.commit()
                 if changed:
                     resultado.atualizados += 1
                 else:
                     resultado.alterados_concorrentemente += 1
-            else:
+            if foto_url:
+                foto = db.scalar(
+                    select(FotoPesquisador).where(
+                        FotoPesquisador.pesquisador_id == pesquisador_id
+                    )
+                )
+                if foto is None:
+                    db.add(FotoPesquisador(pesquisador_id=pesquisador_id, url=foto_url))
+                    resultado.fotos_atualizadas += 1
+                elif foto.url != foto_url:
+                    foto.url = foto_url
+                    resultado.fotos_atualizadas += 1
+            if nome or foto_url:
+                db.commit()
+            if not nome:
                 resultado.sem_resultado += 1
             resultado.ultimo_id = pesquisador_id
             if ao_processar is not None:

@@ -27,7 +27,6 @@ class Config(BaseSettings):
     via_cep_url: str
     maria_api_url: str = Field(min_length=1)
     maria_api_timeout_seconds: float = Field(gt=0)
-    oda_pesquisadores_url: str | None = None
     external_api_timeout_seconds: float = Field(gt=0)
     ingest_batch_size: int = Field(gt=0)
     ingest_checkpoint_interval: int = Field(gt=0)

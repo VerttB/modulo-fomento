@@ -10,6 +10,7 @@
 .maria-dialogue .question-form input { min-height: 2.75rem; font-size: var(--text-body); }
 .maria-messages { display: flex; flex: 1; flex-direction: column; align-items: stretch; gap: var(--spacing-section); min-height: 45vh; max-height: 65vh; overflow: auto; margin: var(--spacing-section) 0; }
 .maria-message { padding: var(--spacing-section); background: var(--color-app); border-radius: var(--radius-panel); overflow-wrap: anywhere; }
+.maria-message-pending { opacity: .7; }
 .maria-typing { display: flex; align-items: center; gap: .75rem; align-self: flex-start; padding: .75rem 1rem; border-radius: var(--radius-panel); background: var(--color-app); color: var(--color-brand-dark); font-size: var(--text-body); }
 .maria-typing-dots { display: flex; gap: .25rem; }
 .maria-typing-dots i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-brand); animation: maria-pulse 1s ease-in-out infinite alternate; }

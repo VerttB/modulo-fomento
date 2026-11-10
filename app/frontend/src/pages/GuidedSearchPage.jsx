@@ -78,7 +78,7 @@ export default function GuidedSearchPage({ onApiStateChange }) {
         <h3>{detail?.title || (selected ? "Conversa" : "Nova conversa")}</h3>
         {detail?.questions_limit != null && <small>Perguntas: {detail.questions_asked} de {detail.questions_limit}</small>}
         <div className="maria-messages">
-          {loadingMessages ? <p>Carregando mensagens…</p> : messages.length === 0 && !sending ? <p>Envie uma pergunta para iniciar a conversa.</p> : messages.map((message) => <article className="maria-message" key={message.id}><strong>{message.role === "user" ? "Você" : "Maria"}</strong><MessageContent blocks={message.content} onSuggest={submit} disabled={sending || loadingMessages} /></article>)}
+          {loadingMessages ? <p>Carregando mensagens…</p> : messages.length === 0 && !sending ? <p>Envie uma pergunta para iniciar a conversa.</p> : messages.map((message) => <article className="maria-message" key={message.id}><strong>{message.role === "user" ? "Você" : "Maria"}</strong><MessageContent blocks={message.content} role={message.role} onSuggest={submit} disabled={sending || loadingMessages} /></article>)}
           {sending && <div className="maria-typing" role="status"><span className="maria-typing-dots" aria-hidden="true"><i /><i /><i /></span><span>A Maria está preparando sua resposta…</span></div>}
         </div>
         {error && <div className="api-error" role="alert"><span>{error}</span>{selected && <button onClick={() => getMessages(selected).then((result) => { setMessages(result.messages); setError(""); }).catch((cause) => setError(getErrorMessage(cause)))}>Atualizar conversa</button>}</div>}

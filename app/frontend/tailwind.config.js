@@ -16,6 +16,8 @@ export default {
         "brand-dark": token("color-brand-dark"),
         "brand-container": token("color-brand-container"),
         "brand-soft": token("color-brand-soft"),
+        "brand-wash": token("color-brand-wash"),
+        "brand-wash-strong": token("color-brand-wash-strong"),
         surface: token("color-surface"),
         "surface-low": token("color-surface-low"),
         "surface-container": token("color-surface-container"),

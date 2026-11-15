@@ -48,15 +48,27 @@ já que o `DESIGN.md` só define explicitamente o `error`.
 - Base de espaçamento 4px; gutter 24px; margem externa desktop 64px; container 1280px.
 - Sombras: `--shadow-surface` (nível 2, difusa e discreta) e `--shadow-overlay` (nível 3, menus e modais).
 
-## Pendências para a próxima etapa
+## Migração da paleta (feita)
 
-Trocar tokens já muda fundo, superfícies, cor de ação e tipografia. Ainda **não**
-foram migrados os valores fixos (`#hex`) que restam nos estilos dos componentes:
+Os estilos deixaram de usar hex fixos. O que foi convertido:
 
-- `src/styles/app.css` — shell (sidebar, topbar, banner de boas-vindas, cards de métrica, painéis) usa a paleta verde/teal antiga em dezenas de hex.
-- `src/styles/api.css` — tabelas, badges e estados.
-- `src/styles/utilities.css` — filtros.
+| Arquivo | O que mudou |
+| --- | --- |
+| `src/styles/app.css` | Shell, sidebar, topbar, banner, cards de métrica, painéis, tabelas, Maria |
+| `src/styles/api.css` | Badges, estados, avisos e tabelas |
+| `src/styles/utilities.css` | Filtros e menus |
+| `src/componentes/mapa/MapaCidades.css` | Mapa, legenda e cartões de seleção |
+| `src/componentes/graficos/TrendChart.jsx` | Série do gráfico em `#07677e` (`--color-brand`) |
+| `src/componentes/mapa/MapaCidades.jsx` | Paleta categórica dos 27 territórios em tons frios |
 
-Enquanto esses arquivos não forem convertidos para `var(--color-*)`, o visual
-ficará híbrido (base azul do Observatório + componentes ainda verdes). O próximo passo é
-substituir por token, arquivo por arquivo, começando por `app.css`.
+Hex restantes no projeto, de propósito:
+
+- `src/styles/tokens.css` — é a definição dos tokens.
+- `TrendChart.jsx` e `MapaCidades.jsx` — cores aplicadas como atributo SVG/Leaflet, onde `var()` não resolve; os valores espelham os tokens.
+- Dois `#fff` dentro de `color-mix()` em `app.css` e `api.css`.
+
+## Pendências conhecidas
+
+- **Tamanhos de fonte**: só o `h1` da página foi normalizado (24px desktop / 20px mobile). O resto mantém a escala antiga (27px, 25.9px, 15.3px...), que não é a do `DESIGN.md` (36/24/20/18/16/14/12/11).
+- **Raios de canto**: os componentes ainda usam valores fixos (9px, 10px, 13px). O design system pede 8px para controles e 12px para painéis — trocar `border-radius` por `var(--radius-control)` / `var(--radius-panel)` é o próximo ajuste.
+- **Paleta do mapa**: os 27 territórios agora usam uma família azul; se a leitura ficar difícil, vale revisar a escala.

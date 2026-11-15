@@ -7,13 +7,16 @@ import "leaflet/dist/leaflet.css";
 import "./MapaCidades.css";
 
 const MUNICIPAL_ZOOM = 8;
+// Paleta categórica de territórios — família azul do design system
+// (Simcc Intelligence). Valores literais porque o Leaflet aplica cores
+// como atributos SVG, onde var() não resolve.
 const territoryColors = {
-  1: "#ead091", 2: "#bbda92", 3: "#c9c0ed", 4: "#cfe195", 5: "#eaca7f",
-  6: "#daac69", 7: "#c1dd94", 8: "#cec3ab", 9: "#c5dc92", 10: "#f2aed2",
-  11: "#e9c67d", 12: "#f6acd2", 13: "#ead493", 14: "#ebd798", 15: "#f3aac5",
-  16: "#e7db8d", 17: "#e8ce8c", 18: "#ecc17c", 19: "#ecdcb0", 20: "#e6d789",
-  21: "#b0cae5", 22: "#e8b2cd", 23: "#f5aac4", 24: "#e8df91", 25: "#b8c5d3",
-  26: "#e9bb78", 27: "#c7bdec",
+  1: "#024a60", 2: "#07677e", 3: "#37637d", 4: "#1d4ed8", 5: "#559fb8",
+  6: "#2b657c", 7: "#719cb8", 8: "#084d63", 9: "#1c4b64", 10: "#004e60",
+  11: "#88d1eb", 12: "#b6eaff", 13: "#a0ccea", 14: "#b4e0fe", 15: "#c6e7ff",
+  16: "#98cee8", 17: "#679db6", 18: "#0a4f66", 19: "#0d5d74", 20: "#2f6f8a",
+  21: "#4a86a3", 22: "#659cba", 23: "#7fb2cd", 24: "#99c8df", 25: "#2a5a75",
+  26: "#3c7590", 27: "#5e93ae",
 };
 const nameAliases = new Map([
   ["muquem do sao francisco", "muquem de sao francisco"],
@@ -23,7 +26,7 @@ const normalize = (value) => {
   const normalized = normalizeText(value || "").trim().replace(/\s+/g, " ");
   return nameAliases.get(normalized) || normalized;
 };
-const colorForTerritory = (id) => territoryColors[String(id)] || "#d6ddd9";
+const colorForTerritory = (id) => territoryColors[String(id)] || "#bfc8cc";
 
 function getTerritoryBorders(geoJson) {
   const segments = new Map();
@@ -176,7 +179,7 @@ export default function MapaCidades({
       click: () => setSelection(detailed
         ? { type: "city", key: normalize(properties.name) }
         : { type: "territory", id: String(properties.territorio_id) }),
-      mouseover: () => { if (detailed) layer.setStyle({ weight: 1.8, color: "#263c36" }); },
+      mouseover: () => { if (detailed) layer.setStyle({ weight: 1.8, color: "#024a60" }); },
       mouseout: () => { if (detailed) layer.setStyle(featureStyle(feature)); },
     });
     if (!city) layer.setStyle({ fillOpacity: 0.65 });
@@ -206,7 +209,7 @@ export default function MapaCidades({
           maxBoundsViscosity={1}
           scrollWheelZoom
           zoomControl
-          style={{ backgroundColor: "#f1f5f9" }}
+          style={{ backgroundColor: "#f3f4f6" }}
         >
           <FitBahia geoJson={geoJson} />
           <ZoomLevel onChange={setZoom} />
@@ -219,7 +222,7 @@ export default function MapaCidades({
           {!detailed && territoryBorders && <GeoJSON
             data={territoryBorders}
             interactive={false}
-            style={{ color: "#53635e", weight: 1.35, opacity: 0.95 }}
+            style={{ color: "#3f484c", weight: 1.35, opacity: 0.95 }}
           />}
         </MapContainer> : <div className="bahia-map map-loading" role={mapError ? "alert" : "status"}>{mapError || "Carregando mapa da Bahia…"}</div>}
         <aside className="city-map-aside">

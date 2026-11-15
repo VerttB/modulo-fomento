@@ -60,6 +60,8 @@
   --color-brand-dark: var(--simcc-navy-deep);
   --color-brand-container: var(--simcc-primary-container);
   --color-brand-soft: var(--simcc-primary-fixed);
+  --color-brand-wash: #eaf3f7;
+  --color-brand-wash-strong: #d3e7f0;
   --color-surface: var(--simcc-surface-lowest);
   --color-surface-low: var(--simcc-surface-low);
   --color-surface-container: var(--simcc-surface-container);

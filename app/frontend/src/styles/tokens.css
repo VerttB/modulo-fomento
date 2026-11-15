@@ -1,0 +1,140 @@
+/*
+ * Camada de tokens visuais do Licori.
+ *
+ * Referência: DESIGN.md do observatorio-front (design system "Simcc Intelligence").
+ * Ordem: primitivos (escala do Observatório) -> semânticos (consumidos pelos
+ * componentes e pelo tailwind.config.js) -> aliases legados.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ------------------------------------------------------------------ *
+   * Primitivos — paleta Simcc Intelligence
+   * ------------------------------------------------------------------ */
+  --simcc-primary: #07677e;
+  --simcc-primary-container: #559fb8;
+  --simcc-primary-fixed: #b6eaff;
+  --simcc-primary-fixed-dim: #88d1eb;
+  --simcc-on-primary-fixed: #001f28;
+  --simcc-navy-deep: #024a60;
+  --simcc-steel-blue: #719cb8;
+  --simcc-secondary: #37637d;
+  --simcc-secondary-container: #b4e0fe;
+
+  --simcc-surface: #f8f9fb;
+  --simcc-surface-lowest: #ffffff;
+  --simcc-surface-low: #f3f4f6;
+  --simcc-surface-container: #edeef0;
+  --simcc-surface-high: #e7e8ea;
+
+  --simcc-on-surface: #191c1e;
+  --simcc-on-surface-variant: #3f484c;
+  --simcc-outline: #6f787d;
+  --simcc-outline-variant: #bfc8cc;
+  --simcc-hairline: #e5e7eb;
+
+  --simcc-error: #ba1a1a;
+  --simcc-error-container: #ffdad6;
+  --simcc-on-error-container: #93000a;
+
+  /* Cores de estado derivadas (o DESIGN.md só define o erro). */
+  --simcc-success: #0f7a58;
+  --simcc-success-container: #d1fae5;
+  --simcc-warning: #8a5a10;
+  --simcc-warning-container: #fef3c7;
+  --simcc-info: #37637d;
+  --simcc-info-container: #e3eef5;
+
+  /* Destaque do hero: gradiente azul -> vermelho documentado no DESIGN.md. */
+  --simcc-highlight-from: #1d4ed8;
+  --simcc-highlight-to: #dc2626;
+
+  /* ------------------------------------------------------------------ *
+   * Semânticos — consumidos pelos componentes
+   * ------------------------------------------------------------------ */
+  --color-app: var(--simcc-surface);
+  --color-ink: var(--simcc-on-surface);
+  --color-ink-soft: var(--simcc-on-surface-variant);
+  --color-brand: var(--simcc-primary);
+  --color-brand-dark: var(--simcc-navy-deep);
+  --color-brand-container: var(--simcc-primary-container);
+  --color-brand-soft: var(--simcc-primary-fixed);
+  --color-surface: var(--simcc-surface-lowest);
+  --color-surface-low: var(--simcc-surface-low);
+  --color-surface-container: var(--simcc-surface-container);
+  --color-border: var(--simcc-hairline);
+  --color-border-soft: var(--simcc-surface-low);
+  --color-outline: var(--simcc-outline-variant);
+  --color-muted: var(--simcc-outline);
+  --color-muted-soft: #98a1a6;
+  --color-steel: var(--simcc-steel-blue);
+  --color-navy: var(--simcc-navy-deep);
+
+  --color-success: var(--simcc-success);
+  --color-success-soft: var(--simcc-success-container);
+  --color-warning: var(--simcc-warning);
+  --color-warning-soft: var(--simcc-warning-container);
+  --color-danger: var(--simcc-error);
+  --color-danger-soft: var(--simcc-error-container);
+  --color-info: var(--simcc-info);
+  --color-info-soft: var(--simcc-info-container);
+
+  /* ------------------------------------------------------------------ *
+   * Tipografia — Lexend (texto) + Ubuntu (dados tabulares)
+   * ------------------------------------------------------------------ */
+  --font-sans: "Lexend", "Segoe UI", Arial, sans-serif;
+  --font-display: "Lexend", "Segoe UI", Arial, sans-serif;
+  --font-data: "Ubuntu", "SFMono-Regular", Consolas, monospace;
+  /* Compatibilidade: Marca/legado ainda referencia Manrope em shorthand. */
+  --font-legacy: var(--font-sans);
+
+  --text-label-sm: 0.6875rem; /* 11px */
+  --text-caption: 0.75rem; /* 12px */
+  --text-brand-description: 0.6875rem; /* 11px */
+  --text-body: 0.875rem; /* 14px */
+  --text-body-lg: 1rem; /* 16px */
+  --text-title: 1.125rem; /* 18px */
+  --text-heading: 1.5rem; /* 24px */
+  --text-display: 2.25rem; /* 36px */
+  --text-data: 0.8125rem; /* 13px */
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-body: 1.55;
+
+  --tracking-label: 0.05em;
+  --tracking-heading: -0.01em;
+  --tracking-display: -0.02em;
+
+  /* ------------------------------------------------------------------ *
+   * Forma e espaçamento (base 4px)
+   * ------------------------------------------------------------------ */
+  --radius-control: 0.5rem; /* 8px — botões e campos */
+  --radius-panel: 0.75rem; /* 12px — cards e painéis */
+  --radius-pill: 9999px; /* badges e chips */
+
+  --spacing-page: 2.5rem;
+  --spacing-page-inline: 4rem; /* 64px de margem externa no desktop */
+  --spacing-section: 1.5rem;
+  --spacing-gutter: 1.5rem;
+  --width-container: 80rem; /* 1280px */
+
+  /* ------------------------------------------------------------------ *
+   * Elevação — níveis tonais do DESIGN.md
+   * ------------------------------------------------------------------ */
+  --shadow-surface: 0 4px 8px rgb(2 74 96 / 0.04);
+  --shadow-overlay: 0 12px 30px rgb(2 74 96 / 0.12);
+  --shadow-focus: 0 0 0 3px rgb(85 159 184 / 0.35);
+
+  /* ------------------------------------------------------------------ *
+   * Aliases legados — mantidos para os estilos ainda não migrados
+   * ------------------------------------------------------------------ */
+  --line: var(--color-border);
+  --ink: var(--color-ink);
+  --teal: var(--color-brand);
+  --deep: var(--color-brand-dark);
+  --paper: var(--color-surface);
+  --muted: var(--color-muted);
+  --mint: var(--simcc-primary-fixed);
+}

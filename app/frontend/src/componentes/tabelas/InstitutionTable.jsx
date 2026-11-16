@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import EmptyState from "../ui/EmptyState.jsx";
 
 export default function InstitutionTable({ items, onSelect }) {
@@ -7,7 +8,7 @@ export default function InstitutionTable({ items, onSelect }) {
       {items.map((institution) => <tr key={institution.id}>
         <td><span className="person-avatar">{(institution.sigla || institution.nome || "?").slice(0, 2).toUpperCase()}</span><strong>{institution.nome || "Nome não informado"}</strong></td>
         <td>{institution.sigla || "—"}</td><td>{institution.cep || "—"}</td>
-        <td><button className="institution-open" onClick={() => onSelect(institution)}>Ver perfil →</button></td>
+        <td><button className="institution-open" onClick={() => onSelect(institution)}>Ver perfil <ChevronRight size={14} aria-hidden="true" /></button></td>
       </tr>)}
     </tbody></table></div>
   );

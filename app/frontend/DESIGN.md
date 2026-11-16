@@ -27,7 +27,8 @@ daquele repositório; aqui fica só o que já foi aplicado e o que falta.
 | `--color-steel` | `#719cb8` | Borda de accent em cards de perfil |
 | `--color-ink` | `#191c1e` | Texto principal |
 | `--color-ink-soft` | `#3f484c` | Texto secundário |
-| `--color-muted` | `#6f787d` | Labels e metadados |
+| `--color-muted` | `#5b6469` | Labels e metadados (contraste ≥ 4.5:1) |
+| `--color-muted-soft` | `#687176` | Texto auxiliar (contraste ≥ 4.5:1) |
 | `--color-border` | `#e5e7eb` | Contornos de 1px |
 | `--color-danger` | `#ba1a1a` | Erros (`--color-danger-soft` para fundo) |
 
@@ -67,8 +68,17 @@ Hex restantes no projeto, de propósito:
 - `TrendChart.jsx` e `MapaCidades.jsx` — cores aplicadas como atributo SVG/Leaflet, onde `var()` não resolve; os valores espelham os tokens.
 - Dois `#fff` dentro de `color-mix()` em `app.css` e `api.css`.
 
+## Item 1 aplicado — contraste, forma, tipografia e ícones
+
+| Frente | O que foi feito |
+| --- | --- |
+| Contraste | `--color-muted` (#5b6469) e `--color-muted-soft` (#687176) substituem #6f787d/#98a1a6. Contraste ≥ 4.5:1 sobre branco, `--color-app` e `--color-surface-low`. |
+| Raios | 43 valores fixos trocados por `--radius-control` (8px) ou `--radius-panel` (12px). Chips e badges usam `--radius-pill`. |
+| Tipografia | 157 declarações normalizadas para a escala 11/12/14/16/18/20/24. O `h1` já seguia 24px/20px. |
+| Ícones | `lucide-react` substitui os glifos Unicode na navegação, cards de métrica, filtros, paginação, exportação, mapa e perfil de instituição. `aria-hidden="true"` nos decorativos. |
+| Layout dos filtros | `.filterbar` passa a usar `flex-wrap: wrap` abaixo de 1250px; o menu fechado do multi-select ganhou `display:none`. Sem isso havia scroll horizontal entre 981px e 1250px. |
+
 ## Pendências conhecidas
 
-- **Tamanhos de fonte**: só o `h1` da página foi normalizado (24px desktop / 20px mobile). O resto mantém a escala antiga (27px, 25.9px, 15.3px...), que não é a do `DESIGN.md` (36/24/20/18/16/14/12/11).
-- **Raios de canto**: os componentes ainda usam valores fixos (9px, 10px, 13px). O design system pede 8px para controles e 12px para painéis — trocar `border-radius` por `var(--radius-control)` / `var(--radius-panel)` é o próximo ajuste.
 - **Paleta do mapa**: os 27 territórios agora usam uma família azul; se a leitura ficar difícil, vale revisar a escala.
+- **Ícones restantes**: verificados apenas os pontos com glifos Unicode; novos componentes devem importar de `lucide-react` em vez de usar símbolos.

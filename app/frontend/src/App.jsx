@@ -1,4 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Building2,
+  ChartColumn,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  FolderKanban,
+  GraduationCap,
+  LayoutDashboard,
+  MapPin,
+  Menu,
+  Search,
+  Settings,
+  Sparkles,
+  Upload,
+  Users,
+  X,
+} from "lucide-react";
 import { getScholarshipPage, getStatistics } from "./services/bolsas";
 import { getErrorMessage } from "./services/http";
 import { getResearchersPage } from "./services/pesquisadores";
@@ -20,14 +38,14 @@ import { formatNumber } from "./utils/format.js";
 import { publicAssetUrl } from "./utils/publicAssetUrl.js";
 
 const navigation = [
-  ["panorama", "Panorama", "◫"],
-  ["indicadores", "Indicadores", "▥"],
-  ["territorios", "Territórios", "⌖"],
-  ["bolsas", "Bolsistas", "▤"],
-  ["pesquisadores", "Pesquisadores", "♙"],
-  ["projetos", "Projetos", "◇"],
-  ["instituicoes", "Instituições", "⌂"],
-  ["maria", "Maria IA", "✳"],
+  ["panorama", "Panorama", LayoutDashboard],
+  ["indicadores", "Indicadores", ChartColumn],
+  ["territorios", "Territórios", MapPin],
+  ["bolsas", "Bolsistas", GraduationCap],
+  ["pesquisadores", "Pesquisadores", Users],
+  ["projetos", "Projetos", FolderKanban],
+  ["instituicoes", "Instituições", Building2],
+  ["maria", "Maria IA", Sparkles],
 ];
 const initialFilters = { from: "", to: "", modality: [], city: [], institution: [], area: [], largeArea: [], territory: [] };
 const labelFor = (view) => view === "ingestoes" ? "Ingestões" : navigation.find(([id]) => id === view)?.[1] || "Panorama";
@@ -181,19 +199,19 @@ export default function App() {
         </a>
         <div className="side-caption">EXPLORAR</div>
         <nav className="side-nav" aria-label="Navegação principal">
-          {navigation.map(([id, label, icon]) => <button key={id} className={`nav-item ${view === id || (id === "instituicoes" && view === "instituicao-perfil") ? "active" : ""}`} onClick={() => { setView(id); setMobileNav(false); }}><span className="nav-icon">{icon}</span>{label}</button>)}
+          {navigation.map(([id, label, Icon]) => <button key={id} className={`nav-item ${view === id || (id === "instituicoes" && view === "instituicao-perfil") ? "active" : ""}`} onClick={() => { setView(id); setMobileNav(false); }}><span className="nav-icon"><Icon size={18} strokeWidth={1.8} aria-hidden="true" /></span>{label}</button>)}
           <button
             className={`nav-item admin-nav-toggle ${view === "ingestoes" ? "active" : ""}`}
             aria-expanded={adminExpanded}
             onClick={() => setAdminExpanded((expanded) => !expanded)}
           >
-            <span className="nav-icon">⚙</span>Administração
-            <span className="nav-chevron" aria-hidden="true">{adminExpanded ? "⌄" : "›"}</span>
+            <span className="nav-icon"><Settings size={18} strokeWidth={1.8} aria-hidden="true" /></span>Administração
+            <span className="nav-chevron" aria-hidden="true">{adminExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
           </button>
           {adminExpanded && (
             <div className="nav-submenu">
               <button className={`nav-subitem ${view === "ingestoes" ? "active" : ""}`} onClick={() => { setView("ingestoes"); setAdminExpanded(true); setMobileNav(false); }}>
-                <span aria-hidden="true">⇧</span>Ingestões
+                <span aria-hidden="true"><Upload size={14} /></span>Ingestões
               </button>
             </div>
           )}
@@ -201,11 +219,11 @@ export default function App() {
         <div className="sidebar-bottom"><div className="fapesb-stamp"><img className="fapesb-brand-image" src={publicAssetUrl("marca/fapesb.png")} alt="FAPESB — Fundação de Amparo à Pesquisa do Estado da Bahia" /></div><div className="side-footer">Observatório de Bolsistas <span>v1.0</span></div></div>
       </aside>
       <main className="main-area">
-        <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav((open) => !open)} aria-label="Abrir menu">☰</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>
+        <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav((open) => !open)} aria-label="Abrir menu">{mobileNav ? <X size={20} /> : <Menu size={20} />}</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>
         <div className="page-content">
-        <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Assistente Maria" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["maria", "pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><label className="export-format"><span>Formato</span><select value={exportFormat} onChange={(event) => setExportFormat(event.target.value)} aria-label="Formato da exportação"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="json">JSON</option></select></label><button className="export-button" disabled={!canExport || exporting} aria-busy={exporting} onClick={exportResults}>{exporting ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span>↓</span> Exportar registros</>}</button><SummaryExportMenu disabled={!canExport} loading={summaryExporting} format={exportFormat} onExport={exportSummary} /></div>}</div>
+        <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Assistente Maria" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["maria", "pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><label className="export-format"><span>Formato</span><select value={exportFormat} onChange={(event) => setExportFormat(event.target.value)} aria-label="Formato da exportação"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="json">JSON</option></select></label><button className="export-button" disabled={!canExport || exporting} aria-busy={exporting} onClick={exportResults}>{exporting ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span aria-hidden="true"><Download size={16} /></span> Exportar registros</>}</button><SummaryExportMenu disabled={!canExport} loading={summaryExporting} format={exportFormat} onExport={exportSummary} /></div>}</div>
           {directoryViews.includes(view) && <form className="search-toolbar" onSubmit={(event) => { event.preventDefault(); setListPage(1); setSearchTerm(searchDraft.trim()); }}>
-          <span aria-hidden="true">⌕</span><input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={view === "projetos" ? 'Buscar título, resumo ou área… (AND, OR, NOT)' : view === "bolsas" ? "Buscar pessoa, projeto, instituição, modalidade ou cidade…" : view === "instituicoes" ? "Buscar instituição por nome ou sigla…" : "Buscar por nome, cidade ou Lattes…"} aria-label="Buscar registros" />
+          <span aria-hidden="true"><Search size={16} /></span><input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder={view === "projetos" ? 'Buscar título, resumo ou área… (AND, OR, NOT)' : view === "bolsas" ? "Buscar pessoa, projeto, instituição, modalidade ou cidade…" : view === "instituicoes" ? "Buscar instituição por nome ou sigla…" : "Buscar por nome, cidade ou Lattes…"} aria-label="Buscar registros" />
             <button type="submit">Buscar</button>{(searchTerm || searchDraft) && <button type="button" className="search-clear" onClick={() => { setSearchDraft(""); setSearchTerm(""); setListPage(1); }}>Limpar</button>}
           </form>}
           {(reportViews.includes(view) || view === "bolsas") && <FiltersPanel filters={filters} choices={{ ...choices, cityRows: baseReport?.por_cidade || [] }} onChange={setFilter} onReset={resetFilters} />}

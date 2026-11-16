@@ -1,3 +1,4 @@
+import { MapPin } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GeoJSON, MapContainer, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
@@ -256,7 +257,7 @@ export default function MapaCidades({
               <button type="button" onClick={() => setSelection(null)}>Limpar seleção</button>
             </div>
           ) : (
-            <div className="map-selection-hint"><span>⌖</span><strong>{detailed ? "Explore os municípios" : "Explore os territórios"}</strong><p>{detailed ? "Clique em uma cidade no mapa para consultar seus dados." : "Clique em uma área colorida para ver a população e a lista de municípios."}</p></div>
+            <div className="map-selection-hint"><span aria-hidden="true"><MapPin size={16} /></span><strong>{detailed ? "Explore os municípios" : "Explore os territórios"}</strong><p>{detailed ? "Clique em uma cidade no mapa para consultar seus dados." : "Clique em uma área colorida para ver a população e a lista de municípios."}</p></div>
           )}
           <div className="territory-map-legend">
             <strong>Territórios de identidade</strong>

@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function FilterMultiSelect({
@@ -30,7 +31,7 @@ export default function FilterMultiSelect({
       <details>
         <summary aria-label={`${label}: ${values.length ? `${values.length} selecionado(s)` : allLabel}`}>
           {values.length ? `${values.length} selecionado(s)` : allLabel}
-          <span className="filter-multi-chevron" aria-hidden="true">⌄</span>
+          <ChevronDown className="filter-multi-chevron" size={14} aria-hidden="true" />
         </summary>
         <div className="filter-multi-menu">
           <input

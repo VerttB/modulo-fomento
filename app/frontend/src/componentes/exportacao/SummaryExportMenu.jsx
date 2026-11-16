@@ -1,3 +1,4 @@
+import { ChevronDown, Table2 } from "lucide-react";
 import { useState } from "react";
 
 const options = [
@@ -36,7 +37,7 @@ export default function SummaryExportMenu({ disabled, loading, format, onExport 
       aria-busy={loading}
       onClick={() => setOpen((current) => !current)}
     >
-      {loading ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span>▦</span> Exportar resumo <span className="summary-export-chevron">⌄</span></>}
+      {loading ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span aria-hidden="true"><Table2 size={16} /></span> Exportar resumo <ChevronDown className="summary-export-chevron" size={14} aria-hidden="true" /></>}
     </button>
     {open && <div className="summary-export-menu" role="group" aria-label="Recortes para exportar">
       <strong>Escolha os recortes</strong>

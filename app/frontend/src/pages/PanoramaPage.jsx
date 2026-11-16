@@ -1,3 +1,4 @@
+import { ArrowUpRight, Award, Building2, GraduationCap, MapPin } from "lucide-react";
 import BarList from "../componentes/graficos/BarList.jsx";
 import TrendChart from "../componentes/graficos/TrendChart.jsx";
 import MetricCard from "../componentes/ui/MetricCard.jsx";
@@ -7,12 +8,12 @@ const rows = (items, key) => (items || []).map((item) => ({ label: item[key], to
 
 export default function PanoramaPage({ report, totals, modalityRows, institutionRows, filters, onNavigate }) {
   return <>
-    <section className="welcome-banner"><div className="welcome-copy"><div className="banner-eyebrow"><span /> OBSERVATÓRIO FAPESB</div><h2>Conhecimento que transforma<br />a Bahia, território por território.</h2><p>Acompanhe os registros de bolsistas e descubra quem está construindo o futuro da ciência baiana.</p><button onClick={() => onNavigate("indicadores")}>Explorar indicadores <span>↗</span></button></div><div className="banner-art" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="orbit orbit-three"/><span className="star star-a">✳</span><span className="star star-b">✳</span><div className="art-core"><span>BA</span><small>ciência<br />em movimento</small></div></div></section>
+    <section className="welcome-banner"><div className="welcome-copy"><div className="banner-eyebrow"><span /> OBSERVATÓRIO FAPESB</div><h2>Conhecimento que transforma<br />a Bahia, território por território.</h2><p>Acompanhe os registros de bolsistas e descubra quem está construindo o futuro da ciência baiana.</p><button onClick={() => onNavigate("indicadores")}>Explorar indicadores <span aria-hidden="true"><ArrowUpRight size={16} /></span></button></div><div className="banner-art" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="orbit orbit-three"/><span className="star star-a">✳</span><span className="star star-b">✳</span><div className="art-core"><span>BA</span><small>ciência<br />em movimento</small></div></div></section>
     <section className="metric-grid">
-      <MetricCard label="Registros de bolsistas" value={totals.total} hint="registros retornados pela API" icon="▤" accent="teal"/>
-      <MetricCard label="Modalidades" value={totals.modalities} hint="categorias de apoio" icon="◉" accent="violet"/>
-      <MetricCard label="Municípios" value={totals.cities} hint="com bolsistas apoiados" icon="⌖" accent="orange"/>
-      <MetricCard label="Instituições" value={totals.institutions} hint="na rede de fomento" icon="⌂" accent="blue"/>
+      <MetricCard label="Registros de bolsistas" value={totals.total} hint="registros retornados pela API" icon={<GraduationCap size={16} />} accent="teal"/>
+      <MetricCard label="Modalidades" value={totals.modalities} hint="categorias de apoio" icon={<Award size={16} />} accent="violet"/>
+      <MetricCard label="Municípios" value={totals.cities} hint="com bolsistas apoiados" icon={<MapPin size={16} />} accent="orange"/>
+      <MetricCard label="Instituições" value={totals.institutions} hint="na rede de fomento" icon={<Building2 size={16} />} accent="blue"/>
     </section>
     <section className="analytics-grid">
       <article className="panel trend-panel"><PanelHeader title="Evolução do fomento" subtitle="Registros de bolsistas por ano de início (API)" action={filters.from || filters.to ? `${filters.from || "início"} — ${filters.to || "atual"}` : "Todos os anos"}/><TrendChart values={report.por_ano || []}/></article>

@@ -68,8 +68,9 @@
   --color-border: var(--simcc-hairline);
   --color-border-soft: var(--simcc-surface-low);
   --color-outline: var(--simcc-outline-variant);
-  --color-muted: var(--simcc-outline);
-  --color-muted-soft: #98a1a6;
+  /* Texto secundário: contraste >= 4.5:1 sobre branco e sobre --color-app. */
+  --color-muted: #5b6469;
+  --color-muted-soft: #687176;
   --color-steel: var(--simcc-steel-blue);
   --color-navy: var(--simcc-navy-deep);
 

@@ -22,7 +22,7 @@
   align-items: center;
   gap: 7px;
   color: var(--color-ink-soft);
-  font-size: 11.8px;
+  font-size:12px;
   font-weight: 600;
   cursor: pointer;
   list-style: none;
@@ -34,7 +34,7 @@
 
 .filter-multi-chevron {
   color: var(--color-muted) !important;
-  font-size: 14px !important;
+  font-size:14px !important;
 }
 
 .filter-multi-menu {
@@ -48,19 +48,24 @@
   max-width: min(340px, 82vw);
   padding: 10px;
   border: 1px solid var(--color-border);
-  border-radius: 9px;
+  border-radius:var(--radius-control);
   background: var(--color-surface);
   box-shadow: 0 12px 30px rgb(2 74 96 / 0.12);
+}
+
+/* Sem isso, o menu fechado continua no layout e gera scroll horizontal. */
+.filter-multiselect details:not([open]) .filter-multi-menu {
+  display: none;
 }
 
 .filter-multi-menu > input[type="search"] {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius:var(--radius-control);
   padding: 7px 9px;
   color: var(--color-ink-soft);
-  font-size: 12px;
+  font-size:12px;
 }
 
 .filter-multi-options {
@@ -75,9 +80,9 @@
   align-items: flex-start;
   gap: 8px;
   padding: 6px 5px;
-  border-radius: 5px;
+  border-radius:var(--radius-control);
   color: var(--color-ink-soft);
-  font-size: 11.5px;
+  font-size:11px;
   cursor: pointer;
 }
 
@@ -99,7 +104,7 @@
 .filter-multi-options > small {
   padding: 8px 5px;
   color: var(--color-muted);
-  font-size: 11px;
+  font-size:11px;
 }
 
 .filter-multi-clear {
@@ -108,5 +113,10 @@
   background: transparent;
   padding: 0 4px;
   color: var(--color-brand);
-  font-size: 11px;
+  font-size:11px;
 }
+
+/* Ícones (lucide): alinhamento consistente dentro dos controles. */
+.nav-icon,.nav-chevron,.export-button>span,.search-toolbar>span,.summary-export-chevron,.back-link,.institution-open,.map-selection-hint>span{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.filter-multi-chevron{align-self:center;flex:0 0 auto}
+button svg,a svg{vertical-align:middle}

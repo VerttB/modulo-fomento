@@ -13,6 +13,7 @@ import InstitutionScholarshipTable from "../componentes/tabelas/InstitutionSchol
 import ResearcherTable from "../componentes/tabelas/ResearcherTable.jsx";
 import ProjectList from "../componentes/tabelas/ProjectList.jsx";
 import EmptyState from "../componentes/ui/EmptyState.jsx";
+import { ChevronLeft, FolderKanban, GraduationCap, MapPin, Users } from "lucide-react";
 import MetricCard from "../componentes/ui/MetricCard.jsx";
 import Pagination from "../componentes/ui/Pagination.jsx";
 import PanelHeader from "../componentes/ui/PanelHeader.jsx";
@@ -92,12 +93,12 @@ export default function InstitutionProfilePage({ institution, onBack, onApiState
       : <InstitutionScholarshipTable items={pageData?.items || []} />;
 
   return <section className="institution-profile">
-    <button className="back-link" onClick={onBack}>← Voltar para instituições</button>
+    <button className="back-link" onClick={onBack}><ChevronLeft size={16} aria-hidden="true" /> Voltar para instituições</button>
     <section className="metric-grid institution-metrics">
-      <MetricCard label="Registros de bolsistas" value={formatNumber(report.total)} hint="no período e filtros da base" icon="▤" accent="teal" />
-      <MetricCard label="Pesquisadores" value={formatNumber(profile.total_pesquisadores)} hint="vinculados a registros de apoio da instituição" icon="♙" accent="violet" />
-      <MetricCard label="Projetos" value={formatNumber(profile.total_projetos)} hint="com bolsistas associados" icon="◇" accent="orange" />
-      <MetricCard label="Municípios" value={formatNumber(report.por_cidade?.length || 0)} hint="de origem dos pesquisadores" icon="⌖" accent="blue" />
+      <MetricCard label="Registros de bolsistas" value={formatNumber(report.total)} hint="no período e filtros da base" icon={<GraduationCap size={16} />} accent="teal" />
+      <MetricCard label="Pesquisadores" value={formatNumber(profile.total_pesquisadores)} hint="vinculados a registros de apoio da instituição" icon={<Users size={16} />} accent="violet" />
+      <MetricCard label="Projetos" value={formatNumber(profile.total_projetos)} hint="com bolsistas associados" icon={<FolderKanban size={16} />} accent="orange" />
+      <MetricCard label="Municípios" value={formatNumber(report.por_cidade?.length || 0)} hint="de origem dos pesquisadores" icon={<MapPin size={16} />} accent="blue" />
     </section>
 
     <div className="institution-tabs" role="tablist" aria-label="Dados da instituição">

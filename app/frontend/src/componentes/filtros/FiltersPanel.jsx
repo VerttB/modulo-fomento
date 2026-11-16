@@ -1,3 +1,4 @@
+import { SlidersHorizontal } from "lucide-react";
 import FilterSelect from "../ui/FilterSelect.jsx";
 import FilterMultiSelect from "../ui/FilterMultiSelect.jsx";
 import { formatNumber } from "../../utils/format.js";
@@ -15,7 +16,7 @@ export default function FiltersPanel({ filters, choices, onChange, onReset }) {
 
   return (
     <section className="filterbar" aria-label="Filtros dos dados">
-      <div className="filter-heading"><span className="filter-glyph">☷</span><strong>Filtros</strong><button onClick={onReset}>Limpar</button></div>
+      <div className="filter-heading"><span className="filter-glyph" aria-hidden="true"><SlidersHorizontal size={16} /></span><strong>Filtros</strong><button type="button" onClick={onReset}>Limpar</button></div>
       <FilterSelect label="De" value={filters.from} onChange={(value) => onChange("from", value)} options={options(years.map((item) => item.value), "Todos")} />
       <FilterSelect label="Até" value={filters.to} onChange={(value) => onChange("to", value)} options={options(years.map((item) => item.value).sort(), "Todos")} />
       <FilterMultiSelect label="Modalidade" values={filters.modality} onChange={(value) => onChange("modality", value)} options={multiOptions(choices.modalities)} allLabel="Todas" />

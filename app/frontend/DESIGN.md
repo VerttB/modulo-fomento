@@ -76,7 +76,7 @@ Hex restantes no projeto, de propósito:
 | Raios | 43 valores fixos trocados por `--radius-control` (8px) ou `--radius-panel` (12px). Chips e badges usam `--radius-pill`. |
 | Tipografia | 157 declarações normalizadas para a escala 11/12/14/16/18/20/24. O `h1` já seguia 24px/20px. |
 | Ícones | `lucide-react` substitui os glifos Unicode na navegação, cards de métrica, filtros, paginação, exportação, mapa e perfil de instituição. `aria-hidden="true"` nos decorativos. |
-| Layout dos filtros | `.filterbar` passa a usar `flex-wrap: wrap` abaixo de 1250px; o menu fechado do multi-select ganhou `display:none`. Sem isso havia scroll horizontal entre 981px e 1250px. |
+| Layout dos filtros | Cada filtro virou um controle visível: borda, fundo cinza-claro, raio de 8px, chevron e cursor de ponteiro. Hover e estado aberto usam o azul da marca; seleções ativas ficam destacadas. Abaixo de 1250px o painel vira grade de 4 colunas (3 em ≤980px, 2 em ≤700px). O menu fechado do multi-select usa `display:none` para não gerar scroll horizontal. |
 
 ## Item 4 aplicado — acessibilidade da navegação
 

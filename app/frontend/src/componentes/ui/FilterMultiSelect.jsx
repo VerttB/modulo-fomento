@@ -29,8 +29,8 @@ export default function FilterMultiSelect({
     <div className="filter-select filter-multiselect">
       <span>{label}</span>
       <details>
-        <summary aria-label={`${label}: ${values.length ? `${values.length} selecionado(s)` : allLabel}`}>
-          {values.length ? `${values.length} selecionado(s)` : allLabel}
+        <summary className={values.length ? "is-active" : undefined} aria-label={`${label}: ${values.length ? `${values.length} selecionado(s)` : allLabel}`}>
+          <span className="filter-multi-value">{values.length ? `${values.length} selecionado(s)` : allLabel}</span>
           <ChevronDown className="filter-multi-chevron" size={14} aria-hidden="true" />
         </summary>
         <div className="filter-multi-menu">

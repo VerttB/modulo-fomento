@@ -78,6 +78,15 @@ Hex restantes no projeto, de propósito:
 | Ícones | `lucide-react` substitui os glifos Unicode na navegação, cards de métrica, filtros, paginação, exportação, mapa e perfil de instituição. `aria-hidden="true"` nos decorativos. |
 | Layout dos filtros | `.filterbar` passa a usar `flex-wrap: wrap` abaixo de 1250px; o menu fechado do multi-select ganhou `display:none`. Sem isso havia scroll horizontal entre 981px e 1250px. |
 
+## Item 4 aplicado — acessibilidade da navegação
+
+| Frente | O que foi feito |
+| --- | --- |
+| Skip link | `Pular para o conteúdo` é o primeiro elemento focável; leva ao `<main id="conteudo" tabindex="-1">` e só aparece no foco. |
+| Item atual | O item ativo da navegação recebe `aria-current="page"`, inclusive o atalho de Instituições no perfil e o subitem Ingestões. |
+| Botão do menu | `aria-expanded`, `aria-controls="menu-principal"` e `aria-label` alternando entre **Abrir menu** e **Fechar menu**. |
+| Sidebar mobile | Overlay para fechar ao clicar fora, fecha com **ESC**, foco preso na sidebar enquanto aberta e devolvido ao botão ao fechar. Fora da tela, a sidebar usa `visibility: hidden` para sair da ordem de tabulação. |
+
 ## Pendências conhecidas
 
 - **Paleta do mapa**: os 27 territórios agora usam uma família azul; se a leitura ficar difícil, vale revisar a escala.

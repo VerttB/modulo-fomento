@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
   ChartColumn,
@@ -55,6 +55,8 @@ const reportViews = ["panorama", "indicadores", "territorios"];
 export default function App() {
   const [view, setView] = useState("panorama");
   const [mobileNav, setMobileNav] = useState(false);
+  const sidebarRef = useRef(null);
+  const menuButtonRef = useRef(null);
   const [adminExpanded, setAdminExpanded] = useState(false);
   const [filters, setFilters] = useState({ ...initialFilters });
   const [baseReport, setBaseReport] = useState(null);
@@ -82,6 +84,45 @@ export default function App() {
     setSearchDraft("");
     setSearchTerm("");
   }, [view]);
+
+  // Menu mobile: ESC fecha, foco fica preso na sidebar e volta ao botão ao fechar.
+  useEffect(() => {
+    if (!mobileNav) return;
+    const previouslyFocused = document.activeElement;
+    const sidebar = sidebarRef.current;
+    const focusable = () => Array.from(sidebar?.querySelectorAll(
+      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    ) || []).filter((element) => element.getClientRects().length > 0);
+    focusable()[0]?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileNav(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusable();
+      if (!elements.length) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      const target = menuButtonRef.current || previouslyFocused;
+      if (target instanceof HTMLElement) target.focus();
+    };
+  }, [mobileNav]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -192,25 +233,30 @@ export default function App() {
 
   return (
     <div className={`app-shell view-${view} min-h-screen bg-app text-ink font-sans`}>
-      <aside className={`sidebar ${mobileNav ? "sidebar-open" : ""}`}>
-        <a className="brand licuri-brand" href="#panorama" onClick={() => setView("panorama")}>
+      <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
+      <aside id="menu-principal" ref={sidebarRef} className={`sidebar ${mobileNav ? "sidebar-open" : ""}`} aria-label="Menu principal">
+        <a className="brand licuri-brand" href="#panorama" onClick={() => { setView("panorama"); setMobileNav(false); }}>
           <img className="licuri-brand-image" src={publicAssetUrl("marca/licuri.jpg")} alt="Licuri" />
           <span className="licuri-brand-description">Plataforma de Monitoramento e Inteligência Territorial dos Bolsistas de Pesquisa da Bahia</span>
         </a>
         <div className="side-caption">EXPLORAR</div>
         <nav className="side-nav" aria-label="Navegação principal">
-          {navigation.map(([id, label, Icon]) => <button key={id} className={`nav-item ${view === id || (id === "instituicoes" && view === "instituicao-perfil") ? "active" : ""}`} onClick={() => { setView(id); setMobileNav(false); }}><span className="nav-icon"><Icon size={18} strokeWidth={1.8} aria-hidden="true" /></span>{label}</button>)}
+          {navigation.map(([id, label, Icon]) => {
+            const active = view === id || (id === "instituicoes" && view === "instituicao-perfil");
+            return <button key={id} className={`nav-item ${active ? "active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => { setView(id); setMobileNav(false); }}><span className="nav-icon"><Icon size={18} strokeWidth={1.8} aria-hidden="true" /></span>{label}</button>;
+          })}
           <button
             className={`nav-item admin-nav-toggle ${view === "ingestoes" ? "active" : ""}`}
             aria-expanded={adminExpanded}
+            aria-controls="submenu-administracao"
             onClick={() => setAdminExpanded((expanded) => !expanded)}
           >
             <span className="nav-icon"><Settings size={18} strokeWidth={1.8} aria-hidden="true" /></span>Administração
             <span className="nav-chevron" aria-hidden="true">{adminExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</span>
           </button>
           {adminExpanded && (
-            <div className="nav-submenu">
-              <button className={`nav-subitem ${view === "ingestoes" ? "active" : ""}`} onClick={() => { setView("ingestoes"); setAdminExpanded(true); setMobileNav(false); }}>
+            <div className="nav-submenu" id="submenu-administracao">
+              <button className={`nav-subitem ${view === "ingestoes" ? "active" : ""}`} aria-current={view === "ingestoes" ? "page" : undefined} onClick={() => { setView("ingestoes"); setAdminExpanded(true); setMobileNav(false); }}>
                 <span aria-hidden="true"><Upload size={14} /></span>Ingestões
               </button>
             </div>
@@ -218,8 +264,9 @@ export default function App() {
         </nav>
         <div className="sidebar-bottom"><div className="fapesb-stamp"><img className="fapesb-brand-image" src={publicAssetUrl("marca/fapesb.png")} alt="FAPESB — Fundação de Amparo à Pesquisa do Estado da Bahia" /></div><div className="side-footer">Observatório de Bolsistas <span>v1.0</span></div></div>
       </aside>
-      <main className="main-area">
-        <header className="topbar"><button className="mobile-menu" onClick={() => setMobileNav((open) => !open)} aria-label="Abrir menu">{mobileNav ? <X size={20} /> : <Menu size={20} />}</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>
+      <div className={`sidebar-overlay ${mobileNav ? "visible" : ""}`} onClick={() => setMobileNav(false)} aria-hidden="true" />
+      <main className="main-area" id="conteudo" tabIndex={-1}>
+        <header className="topbar"><button ref={menuButtonRef} type="button" className="mobile-menu" aria-expanded={mobileNav} aria-controls="menu-principal" aria-label={mobileNav ? "Fechar menu" : "Abrir menu"} onClick={() => setMobileNav((open) => !open)}>{mobileNav ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}</button><div className="breadcrumbs">Observatório <span>/</span> <strong>{view === "instituicao-perfil" ? "Instituições" : labelFor(view)}</strong></div><div className="topbar-right"><span className={`source-status ${currentApiState === "ready" ? "is-live" : ""}`}><i />{currentApiState === "ready" ? "API conectada" : currentApiState === "loading" ? "Consultando API" : "API indisponível"}</span><button className="avatar" aria-label="Perfil">OB</button></div></header>
         <div className="page-content">
         <div className="page-heading"><div><div className="eyebrow">CIÊNCIA, PESSOAS E TERRITÓRIOS</div><h1>{view === "instituicao-perfil" ? selectedInstitution?.nome || "Perfil da instituição" : view === "maria" ? "Assistente Maria" : view === "panorama" ? "Panorama de bolsistas" : labelFor(view)}</h1><p>{view === "instituicao-perfil" ? [selectedInstitution?.sigla, selectedInstitution?.cep].filter(Boolean).join(" · ") || "Dados específicos de fomento" : "Fomento à formação científica nos territórios da Bahia"}</p></div>{view !== "ingestoes" && !["maria", "pesquisadores", "projetos", "instituicoes", "instituicao-perfil"].includes(view) && <div className="heading-actions"><label className="export-format"><span>Formato</span><select value={exportFormat} onChange={(event) => setExportFormat(event.target.value)} aria-label="Formato da exportação"><option value="csv">CSV</option><option value="xlsx">Excel (.xlsx)</option><option value="json">JSON</option></select></label><button className="export-button" disabled={!canExport || exporting} aria-busy={exporting} onClick={exportResults}>{exporting ? <><span className="export-spinner" aria-hidden="true" />Preparando…</> : <><span aria-hidden="true"><Download size={16} /></span> Exportar registros</>}</button><SummaryExportMenu disabled={!canExport} loading={summaryExporting} format={exportFormat} onExport={exportSummary} /></div>}</div>
           {directoryViews.includes(view) && <form className="search-toolbar" onSubmit={(event) => { event.preventDefault(); setListPage(1); setSearchTerm(searchDraft.trim()); }}>

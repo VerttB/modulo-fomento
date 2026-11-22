@@ -23,6 +23,22 @@
   text-transform: uppercase;
 }
 
+.gov-stamp {
+  padding: 0 11px 16px;
+  margin-top: 18px;
+}
+
+.gov-brand-image {
+  display: block;
+  width: 100%;
+  max-width: 11rem;
+  height: auto;
+}
+
+.fapesb-stamp {
+  padding-top: 16px;
+}
+
 .fapesb-brand-image {
   display: block;
   width: 100%;

@@ -1,0 +1,88 @@
+/*
+ * Impressão: o relatório sai limpo, sem menu lateral, sem filtros e sem
+ * botões de ação — só conteúdo, títulos e tabelas.
+ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .app-shell {
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
+  .sidebar,
+  .sidebar-overlay,
+  .mobile-menu,
+  .topbar,
+  .skip-link,
+  .filterbar,
+  .search-toolbar,
+  .heading-actions,
+  .export-button,
+  .export-format,
+  .summary-export,
+  .api-error button,
+  .panel-action,
+  .back-link,
+  .pagination button,
+  .territory-sync-button,
+  .map-header-actions,
+  .maria-launcher,
+  .maria-panel {
+    display: none !important;
+  }
+
+  .main-area {
+    margin-left: 0 !important;
+  }
+
+  .page-content {
+    max-width: none;
+    padding: 0;
+  }
+
+  .page-heading {
+    margin-bottom: 12px;
+  }
+
+  .page-heading h1 {
+    font-size: 20pt;
+  }
+
+  .panel,
+  .metric-card,
+  .welcome-banner,
+  .record-scope {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  .panel {
+    border: 1px solid #d7dde3;
+  }
+
+  .welcome-banner {
+    background: #172b43 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .data-table-wrap {
+    overflow: visible;
+  }
+
+  table {
+    white-space: normal;
+  }
+
+  a[href]::after {
+    content: "";
+  }
+}

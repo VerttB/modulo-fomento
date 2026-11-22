@@ -5,6 +5,8 @@
 @import "./styles/marca.css";
 @import "./styles/maria.css";
 @import "./styles/utilities.css";
+@import "./styles/bahia.css";
+@import "./styles/print.css";
 
 @config "../tailwind.config.js";
 

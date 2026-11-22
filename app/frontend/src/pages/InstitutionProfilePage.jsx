@@ -18,6 +18,7 @@ import MetricCard from "../componentes/ui/MetricCard.jsx";
 import Pagination from "../componentes/ui/Pagination.jsx";
 import PanelHeader from "../componentes/ui/PanelHeader.jsx";
 import { formatNumber } from "../utils/format.js";
+import { institutionInitials, institutionLogo } from "../utils/institutionLogo.js";
 
 const tabs = [
   ["resumo", "Resumo"],
@@ -94,6 +95,16 @@ export default function InstitutionProfilePage({ institution, onBack, onApiState
 
   return <section className="institution-profile">
     <button className="back-link" onClick={onBack}><ChevronLeft size={16} aria-hidden="true" /> Voltar para instituições</button>
+    <div className="institution-identity">
+      {institutionLogo(institution)
+        ? <img className="institution-identity-logo" src={institutionLogo(institution)} alt={`Logo de ${institution.nome || institution.sigla}`} />
+        : <span className="institution-identity-mark" aria-hidden="true">{institutionInitials(institution)}</span>}
+      <div className="institution-identity-text">
+        <span className="institution-identity-kicker">INSTITUIÇÃO DA REDE DE FOMENTO</span>
+        <strong>{institution.nome || institution.sigla}</strong>
+        <small>{[institution.sigla, institution.cep].filter(Boolean).join(" · ")}</small>
+      </div>
+    </div>
     <section className="metric-grid institution-metrics">
       <MetricCard label="Registros de bolsistas" value={formatNumber(report.total)} hint="no período e filtros da base" icon={<GraduationCap size={16} />} accent="teal" />
       <MetricCard label="Pesquisadores" value={formatNumber(profile.total_pesquisadores)} hint="vinculados a registros de apoio da instituição" icon={<Users size={16} />} accent="violet" />

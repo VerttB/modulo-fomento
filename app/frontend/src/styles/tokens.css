@@ -17,12 +17,12 @@
   --simcc-primary-fixed: #b6eaff;
   --simcc-primary-fixed-dim: #88d1eb;
   --simcc-on-primary-fixed: #001f28;
-  --simcc-navy-deep: #024a60;
+  --simcc-navy-deep: #172b43;
   --simcc-steel-blue: #719cb8;
   --simcc-secondary: #37637d;
   --simcc-secondary-container: #b4e0fe;
 
-  --simcc-surface: #f8f9fb;
+  --simcc-surface: #f2f6fb;
   --simcc-surface-lowest: #ffffff;
   --simcc-surface-low: #f3f4f6;
   --simcc-surface-container: #edeef0;
@@ -51,17 +51,55 @@
   --simcc-highlight-to: #dc2626;
 
   /* ------------------------------------------------------------------ *
+   * Fita do Governo da Bahia
+   * Cores extraídas da marca oficial em `public/marca/governo-bahia-secti.png`.
+   * ------------------------------------------------------------------ */
+  --bahia-blue: #044b8d;
+  --bahia-cyan: #29b3b6;
+  --bahia-green: #93c025;
+  --bahia-yellow: #f8b818;
+  --bahia-orange: #ee800d;
+  --bahia-magenta: #e10e7f;
+  --bahia-red: #e00e1b;
+
+  /* Versões "ink": mesma matiz, escurecidas. As cores vivas da fita ficam
+     abaixo de 3:1 no branco, então texto e ícones usam estas (>= 4.5:1). */
+  --bahia-blue-ink: #044b8d;    /* 8.76:1 */
+  --bahia-cyan-ink: #0b6f73;    /* 5.94:1 */
+  --bahia-green-ink: #557512;   /* 5.33:1 */
+  --bahia-yellow-ink: #8a5a10;  /* 5.91:1 */
+  --bahia-orange-ink: #9a4a06;  /* 6.26:1 */
+  --bahia-magenta-ink: #a80d5d; /* 7.29:1 */
+  --bahia-red-ink: #b3261e;     /* 6.54:1 */
+
+  /* Tons médios para marcas de dados (>= 3:1 contra o branco). */
+  --bahia-cyan-data: #0f8f93;
+  --bahia-green-data: #6f9a12;
+  --bahia-yellow-data: #a86f00;
+  --bahia-orange-data: #c05a00;
+  --bahia-magenta-data: #c01574;
+  --bahia-red-data: #c21f16;
+
+  /* Lavagens para chips, ícones e selos. */
+  --bahia-wash-blue: #e7eff7;
+  --bahia-wash-cyan: #e0f4f5;
+  --bahia-wash-green: #eef5dc;
+  --bahia-wash-yellow: #fdf1d9;
+  --bahia-wash-magenta: #fce7f3;
+  --bahia-wash-red: #fbe6e5;
+
+  /* ------------------------------------------------------------------ *
    * Semânticos — consumidos pelos componentes
    * ------------------------------------------------------------------ */
   --color-app: var(--simcc-surface);
   --color-ink: var(--simcc-on-surface);
   --color-ink-soft: var(--simcc-on-surface-variant);
-  --color-brand: var(--simcc-primary);
+  --color-brand: var(--bahia-blue);
   --color-brand-dark: var(--simcc-navy-deep);
-  --color-brand-container: var(--simcc-primary-container);
-  --color-brand-soft: var(--simcc-primary-fixed);
-  --color-brand-wash: #eaf3f7;
-  --color-brand-wash-strong: #d3e7f0;
+  --color-brand-container: #4a7cb0;
+  --color-brand-soft: #b8d8f0;
+  --color-brand-wash: var(--bahia-wash-blue);
+  --color-brand-wash-strong: #d6e4f1;
   --color-surface: var(--simcc-surface-lowest);
   --color-surface-low: var(--simcc-surface-low);
   --color-surface-container: var(--simcc-surface-container);
@@ -74,14 +112,23 @@
   --color-steel: var(--simcc-steel-blue);
   --color-navy: var(--simcc-navy-deep);
 
-  --color-success: var(--simcc-success);
-  --color-success-soft: var(--simcc-success-container);
-  --color-warning: var(--simcc-warning);
-  --color-warning-soft: var(--simcc-warning-container);
-  --color-danger: var(--simcc-error);
-  --color-danger-soft: var(--simcc-error-container);
-  --color-info: var(--simcc-info);
-  --color-info-soft: var(--simcc-info-container);
+  --color-success: var(--bahia-green-ink);
+  --color-success-soft: var(--bahia-wash-green);
+  --color-warning: var(--bahia-yellow-ink);
+  --color-warning-soft: var(--bahia-wash-yellow);
+  --color-danger: var(--bahia-red-ink);
+  --color-danger-soft: var(--bahia-wash-red);
+  --color-info: var(--bahia-cyan-ink);
+  --color-info-soft: var(--bahia-wash-cyan);
+
+  /* Séries de dados — a fita do Bahia em tons legíveis (>= 3:1 no branco). */
+  --chart-1: var(--bahia-blue);
+  --chart-2: var(--bahia-cyan-data);
+  --chart-3: var(--bahia-green-data);
+  --chart-4: var(--bahia-yellow-data);
+  --chart-5: var(--bahia-orange-data);
+  --chart-6: var(--bahia-magenta-data);
+  --chart-7: var(--bahia-red-data);
 
   /* ------------------------------------------------------------------ *
    * Tipografia — Lexend (texto) + Ubuntu (dados tabulares)
@@ -92,9 +139,9 @@
   /* Compatibilidade: Marca/legado ainda referencia Manrope em shorthand. */
   --font-legacy: var(--font-sans);
 
-  --text-label-sm: 0.6875rem; /* 11px */
+  --text-label-sm: 0.75rem; /* 12px */
   --text-caption: 0.75rem; /* 12px */
-  --text-brand-description: 0.6875rem; /* 11px */
+  --text-brand-description: 0.75rem; /* 12px */
   --text-body: 0.875rem; /* 14px */
   --text-body-lg: 1rem; /* 16px */
   --text-title: 1.125rem; /* 18px */
@@ -114,7 +161,7 @@
    * Forma e espaçamento (base 4px)
    * ------------------------------------------------------------------ */
   --radius-control: 0.5rem; /* 8px — botões e campos */
-  --radius-panel: 0.75rem; /* 12px — cards e painéis */
+  --radius-panel: 0.5rem; /* 8px — cards e painéis */
   --radius-pill: 9999px; /* badges e chips */
 
   --spacing-page: 2.5rem;
@@ -126,9 +173,9 @@
   /* ------------------------------------------------------------------ *
    * Elevação — níveis tonais do DESIGN.md
    * ------------------------------------------------------------------ */
-  --shadow-surface: 0 4px 8px rgb(2 74 96 / 0.04);
-  --shadow-overlay: 0 12px 30px rgb(2 74 96 / 0.12);
-  --shadow-focus: 0 0 0 3px rgb(85 159 184 / 0.35);
+  --shadow-surface: 0 4px 8px rgb(4 75 141 / 0.04);
+  --shadow-overlay: 0 12px 30px rgb(4 75 141 / 0.12);
+  --shadow-focus: 0 0 0 3px rgb(4 75 141 / 0.35);
 
   /* ------------------------------------------------------------------ *
    * Aliases legados — mantidos para os estilos ainda não migrados
@@ -139,5 +186,5 @@
   --deep: var(--color-brand-dark);
   --paper: var(--color-surface);
   --muted: var(--color-muted);
-  --mint: var(--simcc-primary-fixed);
+  --mint: var(--bahia-wash-cyan);
 }

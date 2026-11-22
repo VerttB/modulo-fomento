@@ -19,7 +19,7 @@ export default function TerritoriesPage({ report, cities, citiesError, onRetry, 
       ? <div className="api-error" role="alert"><span>Não foi possível carregar os municípios: {citiesError}</span><button onClick={onRetry}>Tentar novamente</button></div>
       : <MapaCidades cidades={cities} bolsasPorCidade={report.por_cidade || []} onSynchronizeTerritories={onSynchronize} syncingTerritories={syncing} syncResult={syncResult}/>}
     <section className="analytics-grid lower-grid">
-      <article className="panel"><PanelHeader title="Territórios de identidade" subtitle="Bolsistas por território no recorte" action=""/><BarList items={rows(report.por_territorio_identidade, "territorio_identidade").slice(0, 15)} tone="teal" emptyMessage="Nenhum território retornado pela API."/></article>
+      <article className="panel" id="tabela-territorios"><PanelHeader title="Territórios de identidade" subtitle="Bolsistas por território no recorte" action=""/><BarList items={rows(report.por_territorio_identidade, "territorio_identidade").slice(0, 15)} tone="teal" emptyMessage="Nenhum território retornado pela API."/></article>
       <article className="panel"><PanelHeader title="Municípios" subtitle="Bolsistas e população estimada" action=""/><BarList items={cityRows} tone="teal" detailKey="detail"/></article>
     </section>
   </>;

@@ -8,16 +8,16 @@ import "leaflet/dist/leaflet.css";
 import "./MapaCidades.css";
 
 const MUNICIPAL_ZOOM = 8;
-// Paleta categórica de territórios — família azul do design system
-// (Simcc Intelligence). Valores literais porque o Leaflet aplica cores
-// como atributos SVG, onde var() não resolve.
+// Paleta categórica de territórios — fita do Governo da Bahia em tons
+// legíveis (>= 3:1 contra o fundo do mapa). Valores literais porque o
+// Leaflet aplica cores como atributos SVG, onde var() não resolve.
 const territoryColors = {
-  1: "#024a60", 2: "#07677e", 3: "#37637d", 4: "#1d4ed8", 5: "#559fb8",
-  6: "#2b657c", 7: "#719cb8", 8: "#084d63", 9: "#1c4b64", 10: "#004e60",
-  11: "#88d1eb", 12: "#b6eaff", 13: "#a0ccea", 14: "#b4e0fe", 15: "#c6e7ff",
-  16: "#98cee8", 17: "#679db6", 18: "#0a4f66", 19: "#0d5d74", 20: "#2f6f8a",
-  21: "#4a86a3", 22: "#659cba", 23: "#7fb2cd", 24: "#99c8df", 25: "#2a5a75",
-  26: "#3c7590", 27: "#5e93ae",
+  1: "#044b8d", 2: "#0f8f93", 3: "#6f9a12", 4: "#a86f00", 5: "#c05a00",
+  6: "#c01574", 7: "#c21f16", 8: "#0f5f96", 9: "#127a7e", 10: "#557512",
+  11: "#8a5a10", 12: "#9a4a06", 13: "#a80d5d", 14: "#b3261e", 15: "#034179",
+  16: "#0d7b7e", 17: "#5f840f", 18: "#905f00", 19: "#a54d00", 20: "#a51264",
+  21: "#a71b13", 22: "#0d5281", 23: "#0f696c", 24: "#49650f", 25: "#774d0e",
+  26: "#844005", 27: "#900b50",
 };
 const nameAliases = new Map([
   ["muquem do sao francisco", "muquem de sao francisco"],
@@ -28,6 +28,18 @@ const normalize = (value) => {
   return nameAliases.get(normalized) || normalized;
 };
 const colorForTerritory = (id) => territoryColors[String(id)] || "#bfc8cc";
+
+/** Dá nome acessível ao container do Leaflet (o mapa não é operável só com o mouse). */
+function MapAccessible({ label, describedBy }) {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    container.setAttribute("role", "region");
+    container.setAttribute("aria-label", label);
+    if (describedBy) container.setAttribute("aria-describedby", describedBy);
+  }, [map, label, describedBy]);
+  return null;
+}
 
 function getTerritoryBorders(geoJson) {
   const segments = new Map();
@@ -161,6 +173,22 @@ export default function MapaCidades({
     ? Number(scholarshipsIndex.get(normalize(selectedCity.cidade))?.total) || 0
     : 0;
 
+  // Resumo textual: a mesma informação do mapa, legível por qualquer meio.
+  const mapSummary = useMemo(() => {
+    if (!territories.length) return null;
+    const totalCities = territories.reduce((sum, territory) => sum + territory.cities.length, 0);
+    const totalPopulation = territories.reduce((sum, territory) => sum + (territory.population || 0), 0);
+    const totalScholarships = territories.reduce((sum, territory) => sum + (territory.scholarships || 0), 0);
+    const top = [...territories].sort((a, b) => b.scholarships - a.scholarships)[0];
+    return {
+      totalCities,
+      totalPopulation,
+      totalScholarships,
+      topName: top?.name,
+      topScholarships: top?.scholarships || 0,
+    };
+  }, [territories]);
+
   const featureStyle = (feature) => ({
     color: detailed ? "#ffffff" : "transparent",
     weight: detailed ? 0.55 : 0,
@@ -180,7 +208,7 @@ export default function MapaCidades({
       click: () => setSelection(detailed
         ? { type: "city", key: normalize(properties.name) }
         : { type: "territory", id: String(properties.territorio_id) }),
-      mouseover: () => { if (detailed) layer.setStyle({ weight: 1.8, color: "#024a60" }); },
+      mouseover: () => { if (detailed) layer.setStyle({ weight: 1.8, color: "#044b8d" }); },
       mouseout: () => { if (detailed) layer.setStyle(featureStyle(feature)); },
     });
     if (!city) layer.setStyle({ fillOpacity: 0.65 });
@@ -194,7 +222,8 @@ export default function MapaCidades({
           <p>{detailed ? "Visualização municipal: selecione uma cidade para ver os detalhes." : "Visão territorial: selecione um território para consultar população e municípios."}</p>
         </div>
         <div className="map-header-actions">
-          <span className="map-city-count">{detailed ? "Municípios" : "27 territórios"}</span>
+          <span className="map-city-count">{detailed ? `${formatNumber(cidades.length)} municípios` : `${territories.length} territórios`}</span>
+          <a className="map-table-link" href="#tabela-territorios">Ver em tabela</a>
           <button type="button" className="territory-sync-button" onClick={onSynchronizeTerritories} disabled={syncingTerritories}>
             {syncingTerritories ? "Sincronizando…" : "Atualizar territórios dos pesquisadores"}
           </button>
@@ -210,8 +239,10 @@ export default function MapaCidades({
           maxBoundsViscosity={1}
           scrollWheelZoom
           zoomControl
+          keyboard
           style={{ backgroundColor: "#f3f4f6" }}
         >
+          <MapAccessible label={detailed ? "Mapa dos municípios da Bahia. Use as setas do teclado para mover a visão." : `Mapa dos ${territories.length} territórios de identidade da Bahia. Use as setas do teclado para mover a visão.`} describedBy="mapa-resumo" />
           <FitBahia geoJson={geoJson} />
           <ZoomLevel onChange={setZoom} />
           <GeoJSON
@@ -270,6 +301,9 @@ export default function MapaCidades({
         </aside>
       </div>
       {syncResult && <p className="territory-sync-result" role="status">{syncResult}</p>}
+      {mapSummary && <p className="map-summary" id="mapa-resumo">
+        <strong>Resumo dos territórios:</strong> {territories.length} territórios de identidade · {formatNumber(mapSummary.totalCities)} municípios · {formatNumber(mapSummary.totalPopulation)} habitantes estimados · {formatNumber(mapSummary.totalScholarships)} registros de bolsistas no recorte atual. O território com mais registros é {mapSummary.topName} ({formatNumber(mapSummary.topScholarships)}).
+      </p>}
       <p className="map-data-note">População estimada conforme a base municipal incluída no projeto. O detalhe muda de território para município ao aproximar o zoom.</p>
     </section>
   );

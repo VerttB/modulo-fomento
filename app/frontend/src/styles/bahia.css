@@ -1,0 +1,173 @@
+/*
+ * Identidade visual do Licuri: fita do Governo da Bahia, animação do
+ * desenho do banner e pequenos detalhes de cor.
+ *
+ * As cores vêm de `src/styles/tokens.css` (--bahia-* e --chart-*).
+ */
+
+/* ------------------------------------------------------------------ *
+ * Fita do Governo da Bahia — faixa institucional reaproveitada
+ * ------------------------------------------------------------------ */
+:root {
+  --fita-bahia: linear-gradient(
+    90deg,
+    var(--bahia-blue) 0%,
+    var(--bahia-cyan) 16%,
+    var(--bahia-green) 32%,
+    var(--bahia-yellow) 48%,
+    var(--bahia-orange) 64%,
+    var(--bahia-magenta) 80%,
+    var(--bahia-red) 100%
+  );
+  --fita-bahia-vertical: linear-gradient(
+    180deg,
+    var(--bahia-blue) 0%,
+    var(--bahia-cyan) 16%,
+    var(--bahia-green) 32%,
+    var(--bahia-yellow) 48%,
+    var(--bahia-orange) 64%,
+    var(--bahia-magenta) 80%,
+    var(--bahia-red) 100%
+  );
+}
+
+/* Faixa de 3px no rodapé da topbar: marca presente em todas as telas. */
+.topbar {
+  position: relative;
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: var(--fita-bahia);
+}
+
+/* Fita sob a marca Licuri no topo da sidebar. */
+.licuri-brand {
+  position: relative;
+}
+
+.licuri-brand::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 10px;
+  border-radius: 2px;
+  background: var(--fita-bahia);
+}
+
+/* Fina no topo do rodapé de cada página. */
+.page-footer {
+  position: relative;
+  padding-top: 16px;
+}
+
+.page-footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--fita-bahia);
+}
+
+/* Acento colorido no topo de cada card de métrica (4 tons da fita). */
+.metric-card.metric-teal::before,
+.metric-card.metric-violet::before,
+.metric-card.metric-orange::before,
+.metric-card.metric-blue::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+}
+
+.metric-card.metric-teal::before { background: var(--chart-2); }
+.metric-card.metric-violet::before { background: var(--chart-6); }
+.metric-card.metric-orange::before { background: var(--chart-5); }
+.metric-card.metric-blue::before { background: var(--chart-1); }
+
+/* ------------------------------------------------------------------ *
+ * Desenho do banner: o "átomo" da Bahia
+ * ------------------------------------------------------------------ */
+@keyframes orbit-spin {
+  from { transform: rotate(-24deg); }
+  to { transform: rotate(336deg); }
+}
+
+@keyframes orbit-spin-reverse {
+  from { transform: rotate(27deg); }
+  to { transform: rotate(-333deg); }
+}
+
+@keyframes orbit-spin-wide {
+  from { transform: rotate(-8deg); }
+  to { transform: rotate(352deg); }
+}
+
+@keyframes core-pulse {
+  0%, 100% { transform: rotate(14deg) scale(1); }
+  50% { transform: rotate(14deg) scale(1.05); }
+}
+
+@keyframes core-glow {
+  0%, 100% { box-shadow: 0 0 0 13px rgb(41 179 182 / 0.18), 0 0 0 28px rgb(41 179 182 / 0.1); }
+  50% { box-shadow: 0 0 0 16px rgb(41 179 182 / 0.14), 0 0 0 34px rgb(41 179 182 / 0.06); }
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+.orbit-one {
+  animation: orbit-spin 26s linear infinite;
+}
+
+.orbit-two {
+  animation: orbit-spin-reverse 34s linear infinite;
+}
+
+.orbit-three {
+  animation: orbit-spin-wide 42s linear infinite;
+}
+
+.art-core {
+  animation: core-pulse 6s ease-in-out infinite, core-glow 6s ease-in-out infinite;
+}
+
+.star-a {
+  animation: star-twinkle 4.5s ease-in-out infinite;
+}
+
+.star-b {
+  animation: star-twinkle 6.5s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
+/* Quem pede menos movimento recebe tudo parado. */
+@media (prefers-reduced-motion: reduce) {
+  .orbit-one,
+  .orbit-two,
+  .orbit-three,
+  .art-core,
+  .star-a,
+  .star-b {
+    animation: none !important;
+  }
+
+  .app-shell * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

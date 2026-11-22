@@ -96,7 +96,7 @@
   border: 1px solid var(--color-border);
   border-radius:var(--radius-control);
   background: var(--color-surface);
-  box-shadow: 0 12px 30px rgb(2 74 96 / 0.12);
+  box-shadow: var(--shadow-overlay);
 }
 
 /* Sem isso, o menu fechado continua no layout e gera scroll horizontal. */
@@ -128,7 +128,7 @@
   padding: 6px 5px;
   border-radius:var(--radius-control);
   color: var(--color-ink-soft);
-  font-size:11px;
+  font-size:12px;
   cursor: pointer;
 }
 
@@ -150,7 +150,7 @@
 .filter-multi-options > small {
   padding: 8px 5px;
   color: var(--color-muted);
-  font-size:11px;
+  font-size:12px;
 }
 
 .filter-multi-clear {
@@ -159,7 +159,159 @@
   background: transparent;
   padding: 0 4px;
   color: var(--color-brand);
-  font-size:11px;
+  font-size:12px;
+}
+
+/* Container do gráfico de evolução: permite que o chart-wrap cresça/encolha
+   e posiciona o toggle abaixo, fora da área fixa do SVG. */
+.trend-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* O chart-wrap agora é flexível: altura fixa para o SVG, auto para a tabela. */
+.chart-wrap {
+  height: auto;
+  min-height: 173px;
+  position: relative;
+  padding: 0 1px 18px 34px;
+}
+
+/* Toggle do gráfico: substitui o SVG pela tabela e vice-versa. */
+.chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  align-self: flex-start;
+}
+
+.chart-toggle:hover {
+  background: var(--color-surface-low);
+  border-color: var(--color-brand-container);
+}
+
+.chart-toggle:focus-visible {
+  outline: 3px solid var(--color-brand-container);
+  outline-offset: 2px;
+}
+
+.chart-data-table {
+  animation: fade-in 0.15s ease-out;
+  width: 100%;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chart-data-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.chart-data-table caption {
+  text-align: left;
+  font-weight: 700;
+  color: var(--color-ink);
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.chart-data-table th,
+.chart-data-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-soft);
+  color: var(--color-ink-soft);
+  font-weight: 500;
+}
+
+.chart-data-table thead th {
+  color: var(--color-muted-soft);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 11px;
+  background: var(--color-surface-low);
+}
+
+.chart-data-table tbody tr:hover td {
+  background: var(--color-surface-low);
+}
+
+/* Conteúdo só para leitores de tela. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Nota de leitura: explicação curta abaixo de um gráfico ou painel. */
+.reading-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-top: 11px;
+  border-top: 1px solid var(--color-border-soft);
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.reading-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--color-brand);
+}
+
+.reading-note span {
+  min-width: 0;
+}
+
+/* Selo de recorte: linha fina entre o cabeçalho e os filtros. */
+.record-scope {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: -8px 0 14px;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+}
+
+.record-scope i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-brand);
+}
+
+.record-scope b {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
+.record-scope .record-scope-meta {
+  color: var(--color-muted);
 }
 
 /* Ícones (lucide): alinhamento consistente dentro dos controles. */

@@ -10,7 +10,10 @@ export default function BarList({ items, tone, labelKey = "label", detailKey = n
         <div className="bar-item" key={`${item[labelKey]}-${index}`}>
           <div className="bar-meta">
             <span className="bar-rank">{String(index + 1).padStart(2, "0")}</span>
-            <span className="bar-label">{item[labelKey]}{detailKey && item[detailKey] && <small>{item[detailKey]}</small>}</span>
+            <div className="bar-label-wrap">
+              <span className="bar-label">{item[labelKey]}</span>
+              {detailKey && item[detailKey] && <span className="bar-detail">{item[detailKey]}</span>}
+            </div>
             <strong>{formatNumber(item.total)}</strong>
           </div>
           <div className="bar-track"><span className={tone} style={{ width: `${Math.max((item.total / max) * 100, 3)}%` }} /></div>

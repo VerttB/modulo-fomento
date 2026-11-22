@@ -15,6 +15,8 @@ código existente já esteja em conformidade com ela.
 - Quando o pedido for de planejamento, não altere arquivos até receber autorização.
 - Preserve alterações existentes e arquivos do usuário. Não remova arquivos
   desconhecidos, backups ou dados como parte de uma limpeza presumida.
+- Trabalhe na branch `Develop`. Não faça merge nem push para `main` sem
+  autorização explícita do usuário.
 - Não crie commits, execute migrations ou limpe dados sem solicitação do usuário.
 - Nunca versione credenciais, arquivos `.env`, backups ou arquivos de ingestão
   com dados pessoais. Documente as variáveis necessárias em `.env.example`, sem
